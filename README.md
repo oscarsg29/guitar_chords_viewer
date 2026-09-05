@@ -2,6 +2,8 @@
 
 Native Python desktop app for viewing guitar drop chord voicings and CAGED shapes.
 
+A small browser demo is available from `docs/index.html` for GitHub Pages.
+
 Run it from the repository root:
 
 ```bash

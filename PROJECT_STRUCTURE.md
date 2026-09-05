@@ -23,6 +23,9 @@ This repository is organized so the app code, tests, and documentation have clea
 |   |-- test_playability.py
 |   `-- test_ui_tkinter.py
 |-- docs/
+|   |-- index.html
+|   |-- demo/
+|   |   `-- index.html
 |   `-- screenshots/
 |       |-- drop-2-root-position.png
 |       `-- drop-3-root-position.png
@@ -185,6 +188,14 @@ Documentation files live at the repository root. Their individual intentions are
 ### `docs/screenshots/`
 
 Screenshot assets referenced by `README.md`.
+
+### `docs/demo/`
+
+Static HTML/CSS/JavaScript demo for GitHub Pages. It previews a few chords without audio and does not replace the Python desktop app.
+
+### `docs/index.html`
+
+GitHub Pages entry point that redirects to `docs/demo/`.
 
 ## Update Rule Of Thumb
 
