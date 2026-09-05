@@ -106,6 +106,108 @@ class MusicTheoryTests(unittest.TestCase):
         self.assertGreater(len(get_chord_types()), 0)
         self.assertGreater(len(get_inversions("Drop 2")), 0)
 
+    def test_caged_shapes_are_supported_voicing_types(self):
+        expected_shapes = {
+            "CAGED C Shape",
+            "CAGED A Shape",
+            "CAGED G Shape",
+            "CAGED E Shape",
+            "CAGED D Shape",
+        }
+
+        self.assertTrue(expected_shapes.issubset(set(get_chord_types())))
+        self.assertEqual(get_inversions("CAGED C Shape"), ["Standard Shape"])
+
+    def test_caged_shapes_use_caged_chord_qualities(self):
+        self.assertEqual(
+            get_chord_families("CAGED C Shape"),
+            [
+                "Major triad (R-3-5)",
+                "Minor triad (R-b3-5)",
+                "Dominant 7 (R-3-5-b7)",
+                "Major 7 (R-3-5-7)",
+                "Minor 7 (R-b3-5-b7)",
+                "Major 6 (R-3-5-6)",
+                "Minor 6 (R-b3-5-6)",
+                "Suspended 2 (R-2-5)",
+                "Suspended 4 (R-4-5)",
+                "Add 9 (R-3-5-9)",
+                "Diminished triad (R-b3-b5)",
+                "Augmented triad (R-3-#5)",
+            ],
+        )
+
+    def test_calculate_c_major_caged_c_shape(self):
+        frets, labels = calculate_fret_positions(
+            "CAGED C Shape",
+            "Standard Shape",
+            "Major triad (R-3-5)",
+            "C",
+        )
+
+        self.assertEqual(frets, {5: 3, 4: 2, 3: 0, 2: 1, 1: 0})
+        self.assertEqual(labels, {5: "R", 4: "3", 3: "5", 2: "R", 1: "3"})
+
+    def test_calculate_c_major_caged_a_shape(self):
+        frets, labels = calculate_fret_positions(
+            "CAGED A Shape",
+            "Standard Shape",
+            "Major triad (R-3-5)",
+            "C",
+        )
+
+        self.assertEqual(frets, {5: 3, 4: 5, 3: 5, 2: 5, 1: 3})
+        self.assertEqual(labels, {5: "R", 4: "5", 3: "R", 2: "3", 1: "5"})
+
+    def test_caged_minor_shape_lowers_thirds(self):
+        frets, labels = calculate_fret_positions(
+            "CAGED A Shape",
+            "Standard Shape",
+            "Minor triad (R-b3-5)",
+            "C",
+        )
+
+        self.assertEqual(frets, {5: 3, 4: 5, 3: 5, 2: 4, 1: 3})
+        self.assertEqual(labels, {5: "R", 4: "5", 3: "R", 2: "b3", 1: "5"})
+
+    def test_all_caged_shapes_support_all_caged_chord_families(self):
+        for chord_type in get_chord_types():
+            if not chord_type.startswith("CAGED"):
+                continue
+
+            for chord_family in get_chord_families(chord_type):
+                with self.subTest(chord_type=chord_type, chord_family=chord_family):
+                    frets, labels = calculate_fret_positions(
+                        chord_type,
+                        "Standard Shape",
+                        chord_family,
+                        "C",
+                    )
+
+                    self.assertEqual(set(frets), set(labels))
+                    self.assertGreaterEqual(len(frets), 3)
+
+    def test_caged_dominant_seventh_labels_are_shown(self):
+        _frets, labels = calculate_fret_positions(
+            "CAGED E Shape",
+            "Standard Shape",
+            "Dominant 7 (R-3-5-b7)",
+            "E",
+        )
+
+        self.assertIn("b7", set(labels.values()))
+
+    def test_caged_suspended_shape_replaces_the_third(self):
+        _frets, labels = calculate_fret_positions(
+            "CAGED D Shape",
+            "Standard Shape",
+            "Suspended 4 (R-4-5)",
+            "D",
+        )
+
+        self.assertIn("4", set(labels.values()))
+        self.assertNotIn("3", set(labels.values()))
+
 
 if __name__ == "__main__":
     unittest.main()

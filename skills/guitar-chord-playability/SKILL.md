@@ -13,9 +13,10 @@ Use this skill when adding, reviewing, or changing guitar chord voicings. The go
 
 A voicing is supported by the current simple app model when:
 
-- It uses no more than four notes.
-- It maps to the app's four voice slots.
-- It uses a supported string set, such as Drop 2 or Drop 3.
+- Drop voicings use no more than four notes.
+- Drop voicings map to the app's four voice slots.
+- CAGED shapes may use up to six sounded strings when they follow standard movable CAGED templates.
+- It uses a supported string set, such as Drop 2, Drop 3, or one of the CAGED standard shapes.
 - Extended chords are reduced to shell voicings when a full chord would require more than four notes.
 
 ## Physical Playability Ratings
@@ -24,7 +25,7 @@ Use fret span as the first practical check. Ignore open strings when calculating
 
 - `playable`: fretted notes fit within a small span.
 - `stretchy`: fretted notes are possible but may feel uncomfortable.
-- `not recommended`: the fret span is too wide, the grip uses too many notes for the model, or the position is unusually high.
+- `not recommended`: the fret span is too wide, the grip uses too many sounded strings for the selected model, or the position is unusually high.
 
 For this app's rule implementation:
 
@@ -33,6 +34,8 @@ For this app's rule implementation:
 - `not recommended`: fret span is more than 5 frets.
 - `not recommended`: highest fret is above fret 18.
 - Open strings do not count against fret span.
+- Drop voicings are limited to four sounded strings.
+- CAGED standard shapes can use up to six sounded strings because duplicate chord tones are part of many shapes.
 
 ## Shell Voicing Rules
 

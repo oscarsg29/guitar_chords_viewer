@@ -22,7 +22,7 @@ DRY means "Don't Repeat Yourself."
 
 - Put repeated chord formulas in one data structure.
 - Put repeated drawing values, such as colors and marker sizes, in named constants.
-- Avoid copying similar blocks for Drop 2, Drop 3, and future voicings if a shared helper can handle them.
+- Avoid copying similar blocks for Drop 2, Drop 3, CAGED, and future voicings if a shared helper can handle them.
 
 Do not overdo DRY. If two pieces of code only look similar but mean different things musically, clarity is more important than merging them.
 
@@ -53,7 +53,7 @@ Keep different responsibilities in different sections or files.
 
 - Music data: notes, tunings, chord formulas, and base shapes.
 - Music logic: functions that calculate fret positions.
-- UI state: selected root, chord quality, drop type, and inversion.
+- UI state: selected root, chord quality, voicing shape, inversion, and play mode.
 - Drawing logic: code that renders the fretboard and note markers.
 
 This makes the app easier to change without breaking unrelated behavior.
@@ -78,6 +78,7 @@ Chord formulas describe musical identity. Playability rules describe whether a g
 - Keep physical grip rules in `src/guitar_chords_viewer/playability.py`.
 - Let the UI display a computed assessment instead of hard-coding playability text.
 - Treat full extended chords as shell voicings when more than four notes would be required.
+- Treat CAGED as standard movable chord-shape templates, not as four-note drop voicings.
 
 ## Recommended Architecture
 
@@ -131,6 +132,21 @@ Add a new top-level shape name with inversion mappings that follow the existing 
     "Root Position": {6: (0, "R"), 4: (0, "5"), 3: (1, "7"), 2: (0, "3")},
 }
 ```
+
+### Add A New CAGED Shape
+
+Edit `CAGED_SHAPES`.
+
+Add a new template with its open-position root and string layout:
+
+```python
+"CAGED E Shape": {
+    "root_note": "E",
+    "layout": {6: (0, "R"), 5: (2, "5"), 4: (2, "R"), 3: (1, "3"), 2: (0, "5"), 1: (0, "R")},
+}
+```
+
+CAGED chord quality options are maintained separately from drop chord qualities because each CAGED chord type owns shape-specific string layouts.
 
 ### Change Visual Style
 

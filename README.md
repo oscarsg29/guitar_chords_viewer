@@ -1,6 +1,6 @@
 # guitar_chords_viewer
 
-Native Python desktop app for viewing guitar drop chord voices and shapes.
+Native Python desktop app for viewing guitar drop chord voicings and CAGED shapes.
 
 Run it from the repository root:
 

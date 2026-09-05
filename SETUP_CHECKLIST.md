@@ -29,6 +29,12 @@ python3 -m unittest discover -s tests
 python3 -c 'import sys; sys.path.insert(0, "src"); from guitar_chords_viewer.ui_tkinter import GuitarChordViewer; app = GuitarChordViewer(); app.update(); print(app.title()); app.destroy()'
 ```
 
+- [x] A local audio player is available for the Play button:
+
+```bash
+command -v afplay || command -v aplay || command -v paplay
+```
+
 ## Run The App
 
 - [x] Start the native Python app from the project directory:
@@ -50,6 +56,7 @@ python3 guitarChordsViewer.py
 
 - This is a native Python desktop app.
 - The app uses `tkinter` from the Python standard library for the desktop UI.
+- The Play button generates a temporary WAV file and uses the available system audio player.
 - `guitarChordsViewer.py` is a small launcher that calls `src/guitar_chords_viewer/app.py`.
 - It can also be launched directly with `./guitarChordsViewer.py`.
 - The script passes Python syntax compilation.

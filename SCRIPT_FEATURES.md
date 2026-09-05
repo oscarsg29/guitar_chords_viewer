@@ -1,14 +1,15 @@
 # Script Features And Intention
 
-`guitarChordsViewer.py` is intended to be an interactive native Python desktop app for visualizing guitar-playable drop chord voicings.
+`guitarChordsViewer.py` is intended to be an interactive native Python desktop app for visualizing guitar-playable drop voicings and CAGED chord shapes.
 
 ## Main Intention
 
-The script helps a guitarist explore four-note voicings across:
+The script helps a guitarist explore four-note drop voicings and standard CAGED shapes across:
 
 - Root notes
 - Chord qualities
-- Drop voicing types
+- Voicing shapes
+- CAGED standard shapes
 - Inversions
 
 It calculates fret positions and displays the selected voicing as a local desktop fretboard-style diagram.
@@ -43,6 +44,24 @@ It calculates fret positions and displays the selected voicing as a local deskto
 - Supports these voicing families:
   - Drop 2
   - Drop 3
+  - CAGED C Shape
+  - CAGED A Shape
+  - CAGED G Shape
+  - CAGED E Shape
+  - CAGED D Shape
+- Supports these CAGED chord types:
+  - Major triad
+  - Minor triad
+  - Dominant 7
+  - Major 7
+  - Minor 7
+  - Major 6
+  - Minor 6
+  - Suspended 2
+  - Suspended 4
+  - Add 9
+  - Diminished triad
+  - Augmented triad
 - Supports these inversion structures:
   - Root Position
   - 1st Inversion
@@ -53,6 +72,11 @@ It calculates fret positions and displays the selected voicing as a local deskto
   - Chord quality
   - Drop type
   - Inversion
+- Opens centered on the screen and stays above other windows without becoming modal.
+- Provides a Play button for hearing the selected chord.
+- Provides these play modes:
+  - Chord
+  - Arpeggio
 - Calculates fret positions dynamically based on the selected root and chord formula.
 - Uses a `tkinter.Canvas` to draw:
   - Vertical fret markers
@@ -62,11 +86,13 @@ It calculates fret positions and displays the selected voicing as a local deskto
 - Highlights root notes in green and other chord tones in blue.
 - Displays a status line summarizing the selected chord and voicing.
 - Displays a computed playability assessment for the selected grip.
+- Synthesizes cleaner electric-guitar style audio locally as a temporary WAV file.
 
 ## Implementation Notes
 
 - The music calculation is centered around `calculate_fret_positions()`.
 - Physical guitar playability is assessed by `src/guitar_chords_viewer/playability.py`.
+- Audio generation and playback are handled by `src/guitar_chords_viewer/audio.py`.
 - Non-obvious numeric values are named as constants in the module that owns the related behavior.
 - The detailed folder layout and file responsibilities are documented in `PROJECT_STRUCTURE.md`.
 - Run and verification commands are documented in `SETUP_CHECKLIST.md`.
@@ -75,5 +101,6 @@ It calculates fret positions and displays the selected voicing as a local deskto
 
 - Add curated triad shapes for three-note voicings.
 - Add finger-aware playability checks, including barre and finger-collision rules.
+- Add configurable audio controls such as duration, tone, or playback volume.
 - Add more tunings and voicing families.
 - Add a save/export image command.

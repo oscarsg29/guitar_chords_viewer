@@ -16,8 +16,8 @@ Rating scale:
   - Music logic, fretboard drawing helpers, UI code, and app entry point are split into separate package modules.
   - The UI class still owns several UI drawing methods, which is acceptable for this app size.
 - [x] Open/Closed Principle: 4/5
-  - New chord qualities and drop shapes can mostly be added by editing data in `src/guitar_chords_viewer/music_theory.py`.
-  - Four-note playable chord qualities now carry their own display labels and voicing notes.
+  - New chord qualities, drop shapes, and CAGED templates can mostly be added by editing data in `src/guitar_chords_viewer/music_theory.py`.
+  - Drop chord qualities and CAGED chord types carry their own display labels and voicing notes.
   - Larger full extended chords still need curated guitar voicing rules if they require more than four notes.
 - [x] Liskov Substitution Principle: 5/5
   - The app does not use inheritance except `tk.Tk`, so there is no custom inheritance hierarchy to violate.
@@ -43,17 +43,21 @@ Rating scale:
   - The app uses only Python standard library modules.
   - The launcher remains simple and is documented in `SETUP_CHECKLIST.md`.
 - [x] Separation of Concerns: 5/5
-  - Music data, drawing helpers, UI, app entry, and launcher responsibilities are split.
+  - Music data, drawing helpers, audio, UI, app entry, and launcher responsibilities are split.
   - Exact file ownership is documented in `PROJECT_STRUCTURE.md`.
+- [x] Audio Separation: 4/5
+  - Audio synthesis and playback live in `src/guitar_chords_viewer/audio.py`.
+  - The UI only passes the selected frets and play mode into the audio layer.
+  - The current synth is procedural and dependency-free, so realistic instrument quality is intentionally limited.
 - [x] Testable Core: 4/5
   - `calculate_fret_positions()` can be tested without opening the GUI.
-  - Unit tests cover supported chord-family options, altered labels, shell labels, voicing notes, and playability assessments.
+  - Unit tests cover supported chord-family options, altered labels, shell labels, CAGED transposition, voicing notes, UI geometry helpers, and playability assessments.
 
 ## Overall Rating
 
 Current architecture score: 4.5/5.
 
-The app now follows the recommended principles well for a small desktop tool. The most useful next improvement is adding more tests around chord formulas and shape transposition behavior.
+The app now follows the recommended principles well for a small desktop tool. The most useful next improvement is adding finger-aware playability checks for barre and partial-barre shapes.
 
 ## Maintenance Checklist
 

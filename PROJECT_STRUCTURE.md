@@ -11,14 +11,17 @@ This repository is organized so the app code, tests, and documentation have clea
 |   `-- guitar_chords_viewer/
 |       |-- __init__.py
 |       |-- app.py
+|       |-- audio.py
 |       |-- fretboard.py
 |       |-- music_theory.py
 |       |-- playability.py
 |       `-- ui_tkinter.py
 |-- tests/
+|   |-- test_audio.py
 |   |-- test_fretboard.py
 |   |-- test_music_theory.py
-|   `-- test_playability.py
+|   |-- test_playability.py
+|   `-- test_ui_tkinter.py
 |-- skills/
 |   |-- guitar-chord-playability/
 |   |   |-- SKILL.md
@@ -52,6 +55,20 @@ Application entry point.
 
 Use this file for the `main()` function that creates and runs the desktop app.
 
+### `src/guitar_chords_viewer/audio.py`
+
+Audio synthesis and playback.
+
+Use this file when changing:
+
+- note-to-frequency conversion
+- generated chord sound
+- chord and arpeggio playback behavior
+- WAV file output
+- operating-system playback command selection
+
+This file should not contain chord formulas or UI layout code.
+
 ### `src/guitar_chords_viewer/music_theory.py`
 
 Music data and pure calculation logic.
@@ -62,6 +79,7 @@ Use this file when changing:
 - string tuning
 - chord qualities
 - drop voicing shapes
+- CAGED standard shape templates
 - fret-position calculation
 
 This file should not import `tkinter`.
@@ -114,6 +132,12 @@ Unit tests for pure music calculation behavior.
 
 Use this file when changing `music_theory.py`.
 
+### `tests/test_audio.py`
+
+Unit tests for MIDI/frequency conversion and WAV generation.
+
+Use this file when changing `audio.py`.
+
 ### `tests/test_playability.py`
 
 Unit tests for physical guitar-grip rules.
@@ -125,6 +149,12 @@ Use this file when changing `playability.py`.
 Unit tests for fretboard coordinate helpers.
 
 Use this file when changing `fretboard.py`.
+
+### `tests/test_ui_tkinter.py`
+
+Unit tests for pure Tkinter UI helpers.
+
+Use this file when changing testable UI helper behavior that does not need a live window.
 
 Test commands are maintained in `SETUP_CHECKLIST.md`.
 

@@ -3,6 +3,7 @@
 import tkinter as tk
 from tkinter import ttk
 
+from guitar_chords_viewer.audio import PLAY_MODE_CHORD, PLAY_MODES, play_frets
 from guitar_chords_viewer.fretboard import (
     CANVAS_BACKGROUND,
     FIRST_STRING,
@@ -50,9 +51,13 @@ from guitar_chords_viewer.music_theory import (
 
 
 APP_TITLE = "Advanced Drop Chord Visualizer"
-DEFAULT_WINDOW_SIZE = "920x560"
+DEFAULT_WINDOW_WIDTH = 920
+DEFAULT_WINDOW_HEIGHT = 560
+DEFAULT_WINDOW_SIZE = f"{DEFAULT_WINDOW_WIDTH}x{DEFAULT_WINDOW_HEIGHT}"
 MIN_WINDOW_WIDTH = 760
 MIN_WINDOW_HEIGHT = 460
+SCREEN_ORIGIN = 0
+ALWAYS_ON_TOP = True
 FIRST_OPTION_INDEX = 0
 
 HEADER_PADDING = (18, 14, 18, 8)
@@ -62,7 +67,7 @@ TITLE_ROW = 0
 CONTROLS_ROW = 1
 FIRST_CONTROL_COLUMN = 0
 CONTROL_COLUMN_PADDING = 8
-CONTROL_COLUMN_COUNT = 4
+CONTROL_COLUMN_COUNT = 6
 TITLE_COLUMNSPAN = CONTROL_COLUMN_COUNT
 TITLE_BOTTOM_PADDING = 10
 SELECTOR_TOP_PADDING = 4
@@ -72,6 +77,15 @@ KEY_ROOT_COLUMN = 0
 CHORD_QUALITY_COLUMN = 1
 DROP_TYPE_COLUMN = 2
 INVERSION_COLUMN = 3
+PLAY_MODE_COLUMN = 4
+PLAY_BUTTON_COLUMN = 5
+
+
+def centered_geometry(window_width, window_height, screen_width, screen_height):
+    """Return a Tk geometry string centered within the available screen."""
+    left = max(SCREEN_ORIGIN, (screen_width - window_width) // 2)
+    top = max(SCREEN_ORIGIN, (screen_height - window_height) // 2)
+    return f"{window_width}x{window_height}+{left}+{top}"
 
 
 class GuitarChordViewer(tk.Tk):
@@ -79,22 +93,36 @@ class GuitarChordViewer(tk.Tk):
 
     def __init__(self):
         super().__init__()
-        self.title(APP_TITLE)
-        self.geometry(DEFAULT_WINDOW_SIZE)
-        self.minsize(MIN_WINDOW_WIDTH, MIN_WINDOW_HEIGHT)
+        self._configure_window()
 
         chord_type = get_chord_types()[FIRST_OPTION_INDEX]
+        chord_family = get_chord_families(chord_type)[FIRST_OPTION_INDEX]
         self.root_note = tk.StringVar(value=get_root_notes()[FIRST_OPTION_INDEX])
-        self.chord_family = tk.StringVar(value=get_chord_families()[FIRST_OPTION_INDEX])
+        self.chord_family = tk.StringVar(value=chord_family)
         self.chord_type = tk.StringVar(value=chord_type)
         self.inversion = tk.StringVar(value=get_inversions(chord_type)[FIRST_OPTION_INDEX])
+        self.play_mode = tk.StringVar(value=PLAY_MODE_CHORD)
         self.status = tk.StringVar()
         self.playability = tk.StringVar()
+        self.audio_status = tk.StringVar()
 
         self._build_controls()
         self._build_canvas()
         self._bind_updates()
         self.draw_fretboard()
+
+    def _configure_window(self):
+        self.title(APP_TITLE)
+        self.geometry(
+            centered_geometry(
+                DEFAULT_WINDOW_WIDTH,
+                DEFAULT_WINDOW_HEIGHT,
+                self.winfo_screenwidth(),
+                self.winfo_screenheight(),
+            )
+        )
+        self.minsize(MIN_WINDOW_WIDTH, MIN_WINDOW_HEIGHT)
+        self.attributes("-topmost", ALWAYS_ON_TOP)
 
     def _build_controls(self):
         header = ttk.Frame(self, padding=HEADER_PADDING)
@@ -110,7 +138,13 @@ class GuitarChordViewer(tk.Tk):
         )
 
         self._add_selector(header, "Key Root", self.root_note, get_root_notes(), KEY_ROOT_COLUMN)
-        self._add_selector(header, "Chord Quality", self.chord_family, get_chord_families(), CHORD_QUALITY_COLUMN)
+        self.chord_family_menu = self._add_selector(
+            header,
+            "Chord Quality",
+            self.chord_family,
+            get_chord_families(self.chord_type.get()),
+            CHORD_QUALITY_COLUMN,
+        )
         self._add_selector(header, "Drop Type", self.chord_type, get_chord_types(), DROP_TYPE_COLUMN)
         self.inversion_menu = self._add_selector(
             header,
@@ -119,6 +153,8 @@ class GuitarChordViewer(tk.Tk):
             get_inversions(self.chord_type.get()),
             INVERSION_COLUMN,
         )
+        self._add_selector(header, "Play Mode", self.play_mode, PLAY_MODES, PLAY_MODE_COLUMN)
+        self._add_play_button(header)
 
         for column in range(CONTROL_COLUMN_COUNT):
             header.columnconfigure(column, weight=1)
@@ -133,6 +169,14 @@ class GuitarChordViewer(tk.Tk):
         menu.pack(fill=tk.X, pady=(SELECTOR_TOP_PADDING, 0))
         return menu
 
+    def _add_play_button(self, parent):
+        frame = ttk.Frame(parent)
+        frame.grid(row=CONTROLS_ROW, column=PLAY_BUTTON_COLUMN, sticky="ew", padx=(CONTROL_COLUMN_PADDING, 0))
+
+        ttk.Label(frame, text="Audio").pack(anchor="w")
+        button = ttk.Button(frame, text="Play", command=self._play_selected_chord)
+        button.pack(fill=tk.X, pady=(SELECTOR_TOP_PADDING, 0))
+
     def _build_canvas(self):
         body = ttk.Frame(self, padding=BODY_PADDING)
         body.pack(fill=tk.BOTH, expand=True)
@@ -144,6 +188,8 @@ class GuitarChordViewer(tk.Tk):
         status_label.pack(anchor="w", pady=(STATUS_TOP_PADDING, 0))
         playability_label = ttk.Label(body, textvariable=self.playability)
         playability_label.pack(anchor="w")
+        audio_status_label = ttk.Label(body, textvariable=self.audio_status)
+        audio_status_label.pack(anchor="w")
 
         self.canvas.bind("<Configure>", lambda _event: self.draw_fretboard())
 
@@ -152,8 +198,32 @@ class GuitarChordViewer(tk.Tk):
             variable.trace_add("write", lambda *_args: self._selection_changed())
 
     def _selection_changed(self):
+        self.audio_status.set("")
+        self._refresh_chord_families()
         self._refresh_inversions()
         self.draw_fretboard()
+
+    def _refresh_chord_families(self):
+        valid_chord_families = get_chord_families(self.chord_type.get())
+        if self.chord_family.get() not in valid_chord_families:
+            self.chord_family.set(valid_chord_families[FIRST_OPTION_INDEX])
+
+        menu = self.chord_family_menu["menu"]
+        menu.delete(0, "end")
+        for value in valid_chord_families:
+            menu.add_command(label=value, command=tk._setit(self.chord_family, value))
+
+    def _play_selected_chord(self):
+        frets, _labels = calculate_fret_positions(
+            self.chord_type.get(),
+            self.inversion.get(),
+            self.chord_family.get(),
+            self.root_note.get(),
+        )
+        if play_frets(frets, play_mode=self.play_mode.get()):
+            self.audio_status.set(f"Playing selected chord as {self.play_mode.get().lower()}.")
+        else:
+            self.audio_status.set("Audio playback is not available on this system.")
 
     def _refresh_inversions(self):
         valid_inversions = get_inversions(self.chord_type.get())
