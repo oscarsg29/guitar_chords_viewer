@@ -1,2 +1,11 @@
 # guitar_chords_viewer
-scripts to generate different guitar chord voices and shapes
+
+Native Python desktop app for viewing guitar drop chord voices and shapes.
+
+Run it from the repository root:
+
+```bash
+python3 guitarChordsViewer.py
+```
+
+See `PROJECT_STRUCTURE.md` for the folder layout and `SETUP_CHECKLIST.md` for verification commands.

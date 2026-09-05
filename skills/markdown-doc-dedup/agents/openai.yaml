@@ -1,0 +1,3 @@
+interface:
+  display_name: "Markdown Doc Dedup"
+  short_description: "Check Markdown docs for duplicated or conflicting information"
