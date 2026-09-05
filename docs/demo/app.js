@@ -2091,6 +2091,7 @@ const VIEW = Object.freeze({ width: 1120, height: 480, left: 92, right: 32, top:
 const FIRST_STRING = 1;
 const LAST_STRING = 6;
 const STRING_GAP_COUNT = LAST_STRING - FIRST_STRING;
+const MIN_WEB_VISIBLE_FRET_SPAN = 8;
 const PLAY_MODE_CHORD = "Chord";
 const PLAY_MODE_ARPEGGIO = "Arpeggio";
 const STRING_OPEN_MIDI = Object.freeze({ 1: 64, 2: 59, 3: 55, 4: 50, 5: 45, 6: 40 });
@@ -2368,10 +2369,30 @@ function scheduleCleanGuitarNote(destination, frequency, startTime, duration) {
 }
 
 function fretGridBounds(frets) {
-  return [
-    Math.max(MUSIC_DATA.gridMinFret, Math.min(...frets) - MUSIC_DATA.fretPaddingBefore),
-    Math.max(MUSIC_DATA.minVisibleFretSpan, Math.max(...frets) + MUSIC_DATA.fretPaddingAfter),
-  ];
+  const minNoteFret = Math.min(...frets);
+  const maxNoteFret = Math.max(...frets);
+  const paddedMinFret = Math.max(MUSIC_DATA.gridMinFret, minNoteFret - MUSIC_DATA.fretPaddingBefore);
+  const paddedMaxFret = maxNoteFret + MUSIC_DATA.fretPaddingAfter;
+  const paddedSpan = paddedMaxFret - paddedMinFret;
+  const visibleSpan = Math.max(MIN_WEB_VISIBLE_FRET_SPAN, MUSIC_DATA.minVisibleFretSpan, paddedSpan);
+
+  let minFret = Math.max(
+    MUSIC_DATA.gridMinFret,
+    Math.floor((minNoteFret + maxNoteFret - visibleSpan) / 2)
+  );
+  let maxFret = minFret + visibleSpan;
+
+  if (minFret > paddedMinFret) {
+    minFret = paddedMinFret;
+    maxFret = minFret + visibleSpan;
+  }
+
+  if (maxFret < paddedMaxFret) {
+    maxFret = paddedMaxFret;
+    minFret = Math.max(MUSIC_DATA.gridMinFret, maxFret - visibleSpan);
+  }
+
+  return [minFret, maxFret];
 }
 
 function positiveModulo(value, divisor) {
