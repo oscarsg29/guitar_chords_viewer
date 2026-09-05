@@ -35,10 +35,12 @@ from guitar_chords_viewer.fretboard import (
     fret_grid_bounds,
     fret_x,
     marker_color,
+    note_marker_x,
     string_y,
 )
 from guitar_chords_viewer.music_theory import (
     STRING_NAMES,
+    assess_chord_playability,
     calculate_fret_positions,
     get_chord_families,
     get_chord_types,
@@ -87,6 +89,7 @@ class GuitarChordViewer(tk.Tk):
         self.chord_type = tk.StringVar(value=chord_type)
         self.inversion = tk.StringVar(value=get_inversions(chord_type)[FIRST_OPTION_INDEX])
         self.status = tk.StringVar()
+        self.playability = tk.StringVar()
 
         self._build_controls()
         self._build_canvas()
@@ -139,6 +142,8 @@ class GuitarChordViewer(tk.Tk):
 
         status_label = ttk.Label(body, textvariable=self.status)
         status_label.pack(anchor="w", pady=(STATUS_TOP_PADDING, 0))
+        playability_label = ttk.Label(body, textvariable=self.playability)
+        playability_label.pack(anchor="w")
 
         self.canvas.bind("<Configure>", lambda _event: self.draw_fretboard())
 
@@ -215,7 +220,7 @@ class GuitarChordViewer(tk.Tk):
 
     def _draw_markers(self, frets, labels, min_grid, fret_width, string_gap):
         for string, fret in frets.items():
-            x = fret_x(fret, min_grid, fret_width)
+            x = note_marker_x(fret, min_grid, fret_width)
             y = string_y(string, string_gap)
             self.canvas.create_oval(
                 x - MARKER_RADIUS,
@@ -239,3 +244,10 @@ class GuitarChordViewer(tk.Tk):
             f"Showing {self.root_note.get()} {self.chord_family.get()} "
             f"as {self.chord_type.get()} ({self.inversion.get()})."
         )
+        assessment = assess_chord_playability(
+            self.chord_type.get(),
+            self.inversion.get(),
+            self.chord_family.get(),
+            self.root_note.get(),
+        )
+        self.playability.set(assessment.message)

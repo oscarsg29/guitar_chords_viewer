@@ -8,6 +8,10 @@ When adding or updating Markdown files, use the `markdown-doc-dedup` skill to ch
 
 The portable repository copy is stored at `skills/markdown-doc-dedup/` for reuse by other agents or machines.
 
+## Guitar Playability Rule
+
+When adding or changing chord voicings, use the `guitar-chord-playability` skill to keep theoretical chord formulas separate from practical guitar-grip rules.
+
 ## README.md
 
 Intention: provide the shortest project-level introduction.

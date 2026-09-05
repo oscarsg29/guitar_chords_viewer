@@ -70,6 +70,15 @@ frets, labels = calculate_fret_positions("Drop 2", "Root Position", "Major 7 (R-
 
 That function should stay independent from `tkinter`.
 
+### Separate Theory From Playability
+
+Chord formulas describe musical identity. Playability rules describe whether a generated grip is practical on guitar.
+
+- Keep interval definitions in `src/guitar_chords_viewer/music_theory.py`.
+- Keep physical grip rules in `src/guitar_chords_viewer/playability.py`.
+- Let the UI display a computed assessment instead of hard-coding playability text.
+- Treat full extended chords as shell voicings when more than four notes would be required.
+
 ## Recommended Architecture
 
 The app uses a small layered package:
@@ -77,6 +86,7 @@ The app uses a small layered package:
 - launcher
 - app entry point
 - music theory logic
+- playability rules
 - fretboard drawing helpers
 - tkinter UI
 - tests
@@ -96,15 +106,19 @@ When you make your own changes:
 
 ### Add A New Chord Quality
 
-Edit `CHORD_FORMULAS`.
+Edit `CHORD_QUALITIES`.
 
 Example:
 
 ```python
-"Minor 6 (R-b3-5-6)": {"R": 0, "3": 3, "5": 7, "7": 9}
+"Minor 6 (R-b3-5-6)": ChordQuality(
+    intervals={"R": 0, "3": 3, "5": 7, "7": 9},
+    display_labels={"R": "R", "3": "b3", "5": "5", "7": "6"},
+    voicing_note="Uses the current seventh-chord slot as a sixth.",
+)
 ```
 
-Note: the current shape data uses interval labels `R`, `3`, `5`, and `7`. If you add a true `6` label, the base shape and formula lookup should be updated together.
+Note: the current shape data uses four voice slots: `R`, `3`, `5`, and `7`. For shell voicings, map those slots to the four chord tones you want to display.
 
 ### Add A New Drop Shape
 

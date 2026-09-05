@@ -17,7 +17,8 @@ Rating scale:
   - The UI class still owns several UI drawing methods, which is acceptable for this app size.
 - [x] Open/Closed Principle: 4/5
   - New chord qualities and drop shapes can mostly be added by editing data in `src/guitar_chords_viewer/music_theory.py`.
-  - More unusual interval labels may still require calculation updates.
+  - Four-note playable chord qualities now carry their own display labels and voicing notes.
+  - Larger full extended chords still need curated guitar voicing rules if they require more than four notes.
 - [x] Liskov Substitution Principle: 5/5
   - The app does not use inheritance except `tk.Tk`, so there is no custom inheritance hierarchy to violate.
 - [x] Interface Segregation Principle: 4/5
@@ -26,6 +27,10 @@ Rating scale:
 - [x] Dependency Inversion Principle: 4/5
   - UI code depends on pure music functions.
   - Music logic does not depend on `tkinter`.
+- [x] Theory vs Playability Separation: 4/5
+  - Chord definitions and physical grip assessment are separated.
+  - Playability is computed from generated fret positions instead of hard-coded in the UI.
+  - The current rules are intentionally simple and do not yet model fingers or barre mechanics.
 - [x] DRY: 4/5
   - Shared constants are centralized in `src/guitar_chords_viewer/music_theory.py` and `src/guitar_chords_viewer/fretboard.py`.
   - Some canvas drawing code is still naturally explicit for readability.
@@ -42,7 +47,7 @@ Rating scale:
   - Exact file ownership is documented in `PROJECT_STRUCTURE.md`.
 - [x] Testable Core: 4/5
   - `calculate_fret_positions()` can be tested without opening the GUI.
-  - A basic `unittest` test file exists in `tests/test_music_theory.py`.
+  - Unit tests cover supported chord-family options, altered labels, shell labels, voicing notes, and playability assessments.
 
 ## Overall Rating
 
@@ -62,6 +67,7 @@ Use this before making changes:
 - [ ] Did I avoid duplicating chord formulas or shape data?
 - [ ] Did I name non-obvious numeric values instead of adding magic numbers?
 - [ ] Did I keep music calculation independent from `tkinter`?
+- [ ] Did I keep chord theory separate from physical playability rules?
 - [ ] Did I run syntax checks?
 - [ ] Did I run tests?
 - [ ] Did I launch the app and verify the changed UI path?

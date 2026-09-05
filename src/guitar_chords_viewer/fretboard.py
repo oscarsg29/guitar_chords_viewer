@@ -37,6 +37,7 @@ STRING_BASE_WIDTH = 1
 LOW_STRING_WIDTH_REFERENCE = 6
 STRING_WIDTH_STEP = 0.45
 STRING_LABEL_X_OFFSET = 18
+NOTE_MARKER_BEHIND_FRET_RATIO = 0.5
 
 
 def fret_grid_bounds(frets):
@@ -50,6 +51,14 @@ def fret_grid_bounds(frets):
 def fret_x(fret, min_grid, fret_width):
     """Return the canvas x-coordinate for a fret."""
     return MARGIN_LEFT + (fret - min_grid) * fret_width
+
+
+def note_marker_x(fret, min_grid, fret_width):
+    """Return the note marker x-coordinate in the fret space behind a fret."""
+    fret_position = fret_x(fret, min_grid, fret_width)
+    if fret == NUT_FRET:
+        return fret_position + fret_width * NOTE_MARKER_BEHIND_FRET_RATIO
+    return fret_position - fret_width * NOTE_MARKER_BEHIND_FRET_RATIO
 
 
 def string_y(string, string_gap):

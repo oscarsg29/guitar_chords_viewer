@@ -1,0 +1,3 @@
+interface:
+  display_name: "Guitar Chord Playability"
+  short_description: "Assess guitar chord grips as playable, stretchy, or not recommended"

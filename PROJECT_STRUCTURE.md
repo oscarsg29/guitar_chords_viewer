@@ -13,10 +13,17 @@ This repository is organized so the app code, tests, and documentation have clea
 |       |-- app.py
 |       |-- fretboard.py
 |       |-- music_theory.py
+|       |-- playability.py
 |       `-- ui_tkinter.py
 |-- tests/
-|   `-- test_music_theory.py
+|   |-- test_fretboard.py
+|   |-- test_music_theory.py
+|   `-- test_playability.py
 |-- skills/
+|   |-- guitar-chord-playability/
+|   |   |-- SKILL.md
+|   |   `-- agents/
+|   |       `-- openai.yaml
 |   `-- markdown-doc-dedup/
 |       |-- SKILL.md
 |       `-- agents/
@@ -72,6 +79,19 @@ Use this file when changing:
 
 This file should not contain chord formulas.
 
+### `src/guitar_chords_viewer/playability.py`
+
+Physical guitar-grip rules.
+
+Use this file when changing:
+
+- playable/stretchy/not recommended thresholds
+- fret-span rules
+- open-string playability handling
+- maximum recommended fret position
+
+This file should not contain chord formulas or UI drawing code.
+
 ### `src/guitar_chords_viewer/ui_tkinter.py`
 
 Native desktop UI.
@@ -94,6 +114,18 @@ Unit tests for pure music calculation behavior.
 
 Use this file when changing `music_theory.py`.
 
+### `tests/test_playability.py`
+
+Unit tests for physical guitar-grip rules.
+
+Use this file when changing `playability.py`.
+
+### `tests/test_fretboard.py`
+
+Unit tests for fretboard coordinate helpers.
+
+Use this file when changing `fretboard.py`.
+
 Test commands are maintained in `SETUP_CHECKLIST.md`.
 
 ## Skills
@@ -105,6 +137,12 @@ Repository copy of the Markdown duplication-check skill.
 Use this folder to share the skill with other agents or machines.
 
 To reuse it elsewhere, copy `skills/markdown-doc-dedup/` into that agent's skills directory, or have the agent read `skills/markdown-doc-dedup/SKILL.md` directly.
+
+### `skills/guitar-chord-playability/`
+
+Repository copy of the guitar chord playability skill.
+
+Use this folder to share the playability rules with other agents or machines. To reuse it elsewhere, copy `skills/guitar-chord-playability/` into that agent's skills directory, or have the agent read `skills/guitar-chord-playability/SKILL.md` directly.
 
 ## Documentation
 

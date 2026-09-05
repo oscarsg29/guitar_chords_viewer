@@ -14,7 +14,7 @@ python3 -c 'import tkinter; print(tkinter.TkVersion)'
 - [x] The script passes Python syntax compilation:
 
 ```bash
-python3 -m py_compile guitarChordsViewer.py src/guitar_chords_viewer/*.py tests/test_music_theory.py
+python3 -m py_compile guitarChordsViewer.py src/guitar_chords_viewer/*.py tests/*.py
 ```
 
 - [x] The unit tests pass:
@@ -41,8 +41,8 @@ python3 guitarChordsViewer.py
 
 ## Current Repository Gaps
 
-- [x] Remove third-party web app dependencies.
-- [x] Remove the Streamlit web server requirement.
+- [x] Remove old third-party UI dependencies.
+- [x] Remove the old web server requirement.
 - [ ] Optionally add a virtual environment workflow.
 - [x] Add executable permissions for direct script execution.
 

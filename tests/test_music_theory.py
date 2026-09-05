@@ -11,10 +11,12 @@ sys.path.insert(0, str(SRC_DIR))
 
 from guitar_chords_viewer.music_theory import (
     calculate_fret_positions,
+    assess_chord_playability,
     get_chord_families,
     get_chord_types,
     get_inversions,
     get_root_notes,
+    get_voicing_note,
 )
 
 
@@ -29,6 +31,74 @@ class MusicTheoryTests(unittest.TestCase):
 
         self.assertEqual(frets, {4: 10, 3: 0, 2: 0, 1: 0})
         self.assertEqual(labels, {4: "R", 3: "5", 2: "7", 1: "3"})
+
+    def test_supported_four_note_playable_chord_families(self):
+        expected = {
+            "Major 7 (R-3-5-7)",
+            "Minor 7 (R-b3-5-b7)",
+            "Dominant 7 (R-3-5-b7)",
+            "Major 6 (R-3-5-6)",
+            "Minor 6 (R-b3-5-6)",
+            "Minor 7 b5 (R-b3-b5-b7)",
+            "Diminished 7 (R-b3-b5-bb7)",
+            "Minor Major 7 (R-b3-5-7)",
+            "Augmented Major 7 (R-3-#5-7)",
+            "Augmented Dominant 7 (R-3-#5-b7)",
+            "Dominant 7 b5 (R-3-b5-b7)",
+            "Dominant 7 #5 (R-3-#5-b7)",
+            "Dominant 7 sus4 (R-4-5-b7)",
+            "Major 7 #11 shell (R-3-7-#11)",
+            "Dominant 9 shell (R-3-b7-9)",
+            "Minor 9 shell (R-b3-b7-9)",
+            "Major 9 shell (R-3-7-9)",
+            "6/9 shell (R-3-6-9)",
+            "Minor 6/9 shell (R-b3-6-9)",
+            "9sus4 shell (R-4-b7-9)",
+            "13 shell (R-3-b7-13)",
+            "Minor 11 shell (R-b3-b7-11)",
+        }
+
+        self.assertEqual(set(get_chord_families()), expected)
+
+    def test_altered_display_labels_are_shown(self):
+        _frets, labels = calculate_fret_positions(
+            "Drop 2",
+            "Root Position",
+            "Minor 7 b5 (R-b3-b5-b7)",
+            "C",
+        )
+
+        self.assertEqual(labels, {4: "R", 3: "b5", 2: "b7", 1: "b3"})
+
+    def test_voicing_note_is_available(self):
+        note = get_voicing_note("Diminished 7 (R-b3-b5-bb7)")
+
+        self.assertIn("diminished", note)
+
+    def test_extended_shell_labels_are_shown(self):
+        _frets, labels = calculate_fret_positions(
+            "Drop 2",
+            "Root Position",
+            "13 shell (R-3-b7-13)",
+            "C",
+        )
+
+        self.assertEqual(labels, {4: "R", 3: "b7", 2: "13", 1: "3"})
+
+    def test_shell_voicing_note_mentions_shell(self):
+        note = get_voicing_note("Minor 11 shell (R-b3-b7-11)")
+
+        self.assertIn("Shell", note)
+
+    def test_selected_voicing_has_physical_playability_assessment(self):
+        assessment = assess_chord_playability(
+            "Drop 2",
+            "Root Position",
+            "Major 7 (R-3-5-7)",
+            "C",
+        )
+
+        self.assertIn(assessment.rating, {"playable", "stretchy", "not recommended"})
 
     def test_selection_lists_are_not_empty(self):
         self.assertGreater(len(get_root_notes()), 0)
