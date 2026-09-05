@@ -22,6 +22,10 @@ This repository is organized so the app code, tests, and documentation have clea
 |   |-- test_music_theory.py
 |   |-- test_playability.py
 |   `-- test_ui_tkinter.py
+|-- docs/
+|   `-- screenshots/
+|       |-- drop-2-root-position.png
+|       `-- drop-3-root-position.png
 |-- skills/
 |   |-- guitar-chord-playability/
 |   |   |-- SKILL.md
@@ -177,6 +181,10 @@ Use this folder to share the playability rules with other agents or machines. To
 ## Documentation
 
 Documentation files live at the repository root. Their individual intentions are documented in `AGENTS.md`.
+
+### `docs/screenshots/`
+
+Screenshot assets referenced by `README.md`.
 
 ## Update Rule Of Thumb
 
