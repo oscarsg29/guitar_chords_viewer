@@ -10,17 +10,38 @@ SRC_DIR = PROJECT_ROOT / "src"
 sys.path.insert(0, str(SRC_DIR))
 
 from guitar_chords_viewer.music_theory import (
+    FretPosition,
+    VoicingResult,
     calculate_fret_positions,
+    calculate_voicing,
     assess_chord_playability,
     get_chord_families,
     get_chord_types,
     get_inversions,
     get_root_notes,
     get_voicing_note,
+    validate_music_data,
 )
 
 
 class MusicTheoryTests(unittest.TestCase):
+    def test_calculate_voicing_returns_named_result(self):
+        voicing = calculate_voicing(
+            "Drop 2",
+            "Root Position",
+            "Major 7 (R-3-5-7)",
+            "C",
+        )
+
+        self.assertIsInstance(voicing, VoicingResult)
+        self.assertEqual(voicing.chord_type, "Drop 2")
+        self.assertEqual(voicing.inversion, "Root Position")
+        self.assertEqual(voicing.chord_family, "Major 7 (R-3-5-7)")
+        self.assertEqual(voicing.root_note, "C")
+        self.assertIn(FretPosition(string=4, fret=10, label="R"), voicing.positions)
+        self.assertEqual(voicing.frets, {4: 10, 3: 0, 2: 0, 1: 0})
+        self.assertEqual(voicing.labels, {4: "R", 3: "5", 2: "7", 1: "3"})
+
     def test_calculate_c_major_7_drop_2_root_position(self):
         frets, labels = calculate_fret_positions(
             "Drop 2",
@@ -31,6 +52,9 @@ class MusicTheoryTests(unittest.TestCase):
 
         self.assertEqual(frets, {4: 10, 3: 0, 2: 0, 1: 0})
         self.assertEqual(labels, {4: "R", 3: "5", 2: "7", 1: "3"})
+
+    def test_music_data_validation_passes(self):
+        self.assertEqual(validate_music_data(), [])
 
     def test_supported_four_note_playable_chord_families(self):
         expected = {

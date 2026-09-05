@@ -8,14 +8,19 @@ Priority scale:
 - Medium: useful after the core model is more stable.
 - Low: valuable only if the app grows or the current approach becomes painful.
 
+## Completed Improvements
+
+| Priority | Improvement | Current State |
+| --- | --- | --- |
+| High | Add explicit domain model objects | `calculate_voicing()` returns `VoicingResult` values composed of `FretPosition` objects. |
+| High | Add shape data validation | Import-time validation checks chord qualities, Drop layouts, CAGED layouts, and generated voicing output. |
+| High | Define module boundary rules | Architecture tests guard domain modules against UI and app-layer imports. |
+| High | Expand testing strategy | Tests now cover architecture boundaries and shape-data validation in addition to music theory, playability, audio, fretboard helpers, and UI helpers. |
+
 ## Recommended Improvements
 
 | Priority | Improvement | Intention |
 | --- | --- | --- |
-| High | Add explicit domain model objects | Replace parallel dictionaries with named results such as `VoicingResult`, `FretPosition`, or `SelectedVoicing` so code is easier to read and extend. |
-| High | Add shape data validation | Verify every chord layout interval exists in its chord quality, every generated fret is non-negative, and fret/label keys match. |
-| High | Define module boundary rules | Make allowed imports explicit so UI, music theory, playability, drawing, and audio responsibilities stay separated. |
-| High | Expand testing strategy | Document which tests belong to music theory, playability, audio, UI helpers, and optional GUI smoke checks. |
 | Medium | Split large music data | Move Drop and CAGED shape data into separate modules if `music_theory.py` becomes hard to scan. |
 | Medium | Add error handling strategy | Define how invalid selections, unsupported audio playback, and missing system players should be reported. |
 | Medium | Document data ownership | Make chord formulas, CAGED layouts, Drop shapes, tuning data, and UI labels clearly owned by the domain layer. |
@@ -25,16 +30,12 @@ Priority scale:
 
 ## Suggested Order
 
-1. Add shape data validation.
-2. Introduce a `VoicingResult` dataclass.
-3. Document module boundary rules.
-4. Expand testing strategy.
-5. Add extension workflow.
-6. Split Drop and CAGED data if `music_theory.py` keeps growing.
-7. Add error handling strategy.
-8. Document data ownership in more detail.
-9. Add configuration strategy.
-10. Add dependency policy.
+1. Add extension workflow.
+2. Split Drop and CAGED data if `music_theory.py` keeps growing.
+3. Add error handling strategy.
+4. Document data ownership in more detail.
+5. Add configuration strategy.
+6. Add dependency policy.
 
 ## Source-Of-Truth Notes
 

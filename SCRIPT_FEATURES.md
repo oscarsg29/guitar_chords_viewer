@@ -90,7 +90,7 @@ It calculates fret positions and displays the selected voicing as a local deskto
 
 ## Implementation Notes
 
-- The music calculation is centered around `calculate_fret_positions()`.
+- The music calculation is centered around `calculate_voicing()`, with `calculate_fret_positions()` kept as a compatibility wrapper.
 - Physical guitar playability is assessed by `src/guitar_chords_viewer/playability.py`.
 - Audio generation and playback are handled by `src/guitar_chords_viewer/audio.py`.
 - Non-obvious numeric values are named as constants in the module that owns the related behavior.

@@ -17,6 +17,7 @@ This repository is organized so the app code, tests, and documentation have clea
 |       |-- playability.py
 |       `-- ui_tkinter.py
 |-- tests/
+|   |-- test_architecture.py
 |   |-- test_audio.py
 |   |-- test_fretboard.py
 |   |-- test_music_theory.py
@@ -138,6 +139,12 @@ This file can depend on `music_theory.py` and `fretboard.py`.
 Unit tests for pure music calculation behavior.
 
 Use this file when changing `music_theory.py`.
+
+### `tests/test_architecture.py`
+
+Tests for module import boundaries and shape-data validation helpers.
+
+Use this file when changing package boundaries, public calculation result objects, or validation behavior.
 
 ### `tests/test_audio.py`
 

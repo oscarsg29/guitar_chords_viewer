@@ -42,7 +42,7 @@ from guitar_chords_viewer.fretboard import (
 from guitar_chords_viewer.music_theory import (
     STRING_NAMES,
     assess_chord_playability,
-    calculate_fret_positions,
+    calculate_voicing,
     get_chord_families,
     get_chord_types,
     get_inversions,
@@ -214,13 +214,13 @@ class GuitarChordViewer(tk.Tk):
             menu.add_command(label=value, command=tk._setit(self.chord_family, value))
 
     def _play_selected_chord(self):
-        frets, _labels = calculate_fret_positions(
+        voicing = calculate_voicing(
             self.chord_type.get(),
             self.inversion.get(),
             self.chord_family.get(),
             self.root_note.get(),
         )
-        if play_frets(frets, play_mode=self.play_mode.get()):
+        if play_frets(voicing.frets, play_mode=self.play_mode.get()):
             self.audio_status.set(f"Playing selected chord as {self.play_mode.get().lower()}.")
         else:
             self.audio_status.set("Audio playback is not available on this system.")
@@ -239,19 +239,19 @@ class GuitarChordViewer(tk.Tk):
         if not hasattr(self, "canvas"):
             return
 
-        frets, labels = calculate_fret_positions(
+        voicing = calculate_voicing(
             self.chord_type.get(),
             self.inversion.get(),
             self.chord_family.get(),
             self.root_note.get(),
         )
-        self._draw_fretboard(frets, labels)
+        self._draw_fretboard(voicing)
         self._update_status()
 
-    def _draw_fretboard(self, frets, labels):
+    def _draw_fretboard(self, voicing):
         width = max(self.canvas.winfo_width(), MIN_CANVAS_WIDTH)
         height = max(self.canvas.winfo_height(), MIN_CANVAS_HEIGHT)
-        min_grid, max_grid = fret_grid_bounds(frets.values())
+        min_grid, max_grid = fret_grid_bounds(voicing.frets.values())
         fret_count = max_grid - min_grid
         fret_width = (width - MARGIN_LEFT - MARGIN_RIGHT) / fret_count
         string_gap = (height - MARGIN_TOP - MARGIN_BOTTOM) / STRING_GAP_COUNT
@@ -259,7 +259,7 @@ class GuitarChordViewer(tk.Tk):
         self.canvas.delete("all")
         self._draw_frets(height, min_grid, max_grid, fret_width)
         self._draw_strings(width, string_gap)
-        self._draw_markers(frets, labels, min_grid, fret_width, string_gap)
+        self._draw_markers(voicing, min_grid, fret_width, string_gap)
 
     def _draw_frets(self, height, min_grid, max_grid, fret_width):
         for fret in range(min_grid, max_grid + 1):
@@ -288,23 +288,23 @@ class GuitarChordViewer(tk.Tk):
                 anchor="e",
             )
 
-    def _draw_markers(self, frets, labels, min_grid, fret_width, string_gap):
-        for string, fret in frets.items():
-            x = note_marker_x(fret, min_grid, fret_width)
-            y = string_y(string, string_gap)
+    def _draw_markers(self, voicing, min_grid, fret_width, string_gap):
+        for position in voicing.positions:
+            x = note_marker_x(position.fret, min_grid, fret_width)
+            y = string_y(position.string, string_gap)
             self.canvas.create_oval(
                 x - MARKER_RADIUS,
                 y - MARKER_RADIUS,
                 x + MARKER_RADIUS,
                 y + MARKER_RADIUS,
-                fill=marker_color(labels[string]),
+                fill=marker_color(position.label),
                 outline=MARKER_OUTLINE_COLOR,
                 width=MARKER_OUTLINE_WIDTH,
             )
             self.canvas.create_text(
                 x,
                 y,
-                text=labels[string],
+                text=position.label,
                 fill=MARKER_TEXT_COLOR,
                 font=MARKER_FONT,
             )

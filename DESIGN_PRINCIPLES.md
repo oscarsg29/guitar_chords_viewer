@@ -65,10 +65,10 @@ The calculation logic should be usable without opening a GUI.
 Good target:
 
 ```python
-frets, labels = calculate_fret_positions("Drop 2", "Root Position", "Major 7 (R-3-5-7)", "C")
+voicing = calculate_voicing("Drop 2", "Root Position", "Major 7 (R-3-5-7)", "C")
 ```
 
-That function should stay independent from `tkinter`.
+That function should return named result data and stay independent from `tkinter`.
 
 ### Separate Theory From Playability
 
@@ -123,7 +123,7 @@ Note: the current shape data uses four voice slots: `R`, `3`, `5`, and `7`. For 
 
 ### Add A New Drop Shape
 
-Edit `BASE_SHAPES`.
+Edit `BASE_SHAPES` and run the validation-backed tests.
 
 Add a new top-level shape name with inversion mappings that follow the existing format:
 
@@ -135,14 +135,16 @@ Add a new top-level shape name with inversion mappings that follow the existing 
 
 ### Add A New CAGED Shape
 
-Edit `CAGED_SHAPES`.
+Edit `CAGED_SHAPES` and run the validation-backed tests.
 
 Add a new template with its open-position root and string layout:
 
 ```python
 "CAGED E Shape": {
     "root_note": "E",
-    "layout": {6: (0, "R"), 5: (2, "5"), 4: (2, "R"), 3: (1, "3"), 2: (0, "5"), 1: (0, "R")},
+    "layouts": {
+        CAGED_MAJOR: {6: (0, "R"), 5: (2, "5"), 4: (2, "R"), 3: (1, "3"), 2: (0, "5"), 1: (0, "R")},
+    },
 }
 ```
 
@@ -164,6 +166,4 @@ Avoid changing music calculation code for visual-only updates.
 
 ## Current Best Next Refactor
 
-The package split is complete. The best next refactor is to add a small model object for the selected voicing, so `calculate_fret_positions()` can return named data instead of parallel dictionaries.
-
-That would make tests clearer as chord and voicing features grow.
+The package split, named voicing result object, import-boundary tests, and shape-data validation are in place. The best next refactor is to add finger-aware playability checks for barre and partial-barre shapes.

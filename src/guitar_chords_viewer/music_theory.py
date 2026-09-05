@@ -38,6 +38,38 @@ class ChordQuality:
     voicing_note: str
 
 
+@dataclass(frozen=True)
+class FretPosition:
+    """A sounded note on one guitar string."""
+
+    string: int
+    fret: int
+    label: str
+
+
+@dataclass(frozen=True)
+class VoicingResult:
+    """Calculated fretboard result for one selected voicing."""
+
+    chord_type: str
+    inversion: str
+    chord_family: str
+    root_note: str
+    positions: tuple[FretPosition, ...]
+    voicing_note: str
+    max_note_count: int | None = None
+
+    @property
+    def frets(self):
+        """Return fret positions keyed by string for legacy callers."""
+        return {position.string: position.fret for position in self.positions}
+
+    @property
+    def labels(self):
+        """Return displayed note labels keyed by string for legacy callers."""
+        return {position.string: position.label for position in self.positions}
+
+
 CHORD_QUALITIES = {
     "Major 7 (R-3-5-7)": ChordQuality(
         intervals={"R": 0, "3": 4, "5": 7, "7": 11},
@@ -318,6 +350,17 @@ CAGED_SHAPES = {
 }
 
 
+def validate_music_data():
+    """Return data-shape validation errors for chord qualities and layouts."""
+    errors = []
+    errors.extend(_validate_chord_qualities("drop chord quality", CHORD_QUALITIES))
+    errors.extend(_validate_chord_qualities("CAGED chord quality", CAGED_CHORD_QUALITIES))
+    errors.extend(_validate_drop_shapes())
+    errors.extend(_validate_caged_shapes())
+    errors.extend(_validate_generated_voicings())
+    return errors
+
+
 def get_root_notes():
     """Return the supported root notes."""
     return list(CHROMATIC_SCALE)
@@ -349,28 +392,26 @@ def get_voicing_note(chord_family):
 
 def assess_chord_playability(chord_type, inversion, chord_family, root_note):
     """Return the physical playability assessment for a selected voicing."""
-    frets, _labels = calculate_fret_positions(chord_type, inversion, chord_family, root_note)
-    max_note_count = MAX_NOTES_IN_CAGED_MODEL if chord_type in CAGED_SHAPES else None
-    if max_note_count is None:
-        return assess_playability(frets, _chord_quality(chord_family, chord_type).voicing_note)
+    voicing = calculate_voicing(chord_type, inversion, chord_family, root_note)
+    if voicing.max_note_count is None:
+        return assess_playability(voicing.frets, voicing.voicing_note)
     return assess_playability(
-        frets,
-        _chord_quality(chord_family, chord_type).voicing_note,
-        max_note_count=max_note_count,
+        voicing.frets,
+        voicing.voicing_note,
+        max_note_count=voicing.max_note_count,
     )
 
 
-def calculate_fret_positions(chord_type, inversion, chord_family, root_note):
-    """Calculate fret positions for a selected guitar chord voicing."""
+def calculate_voicing(chord_type, inversion, chord_family, root_note):
+    """Calculate named fretboard data for a selected guitar chord voicing."""
     if chord_type in CAGED_SHAPES:
-        return _calculate_caged_fret_positions(chord_type, chord_family, root_note)
+        return _calculate_caged_voicing(chord_type, inversion, chord_family, root_note)
 
     root_index = CHROMATIC_SCALE.index(root_note)
     base_layout = BASE_SHAPES[chord_type][inversion]
     chord_quality = _chord_quality(chord_family, chord_type)
 
-    final_frets = {}
-    final_labels = {}
+    positions = []
 
     for string, (base_fret_offset, interval_type) in base_layout.items():
         interval_modifier = chord_quality.intervals[interval_type]
@@ -383,13 +424,31 @@ def calculate_fret_positions(chord_type, inversion, chord_family, root_note):
         elif base_fret_offset >= HIGH_POSITION_OFFSET_THRESHOLD and fret < HIGH_POSITION_WRAP_LIMIT:
             fret += SEMITONES_PER_OCTAVE
 
-        final_frets[string] = fret
-        final_labels[string] = chord_quality.display_labels[interval_type]
+        positions.append(
+            FretPosition(
+                string=string,
+                fret=fret,
+                label=chord_quality.display_labels[interval_type],
+            )
+        )
 
-    return final_frets, final_labels
+    return VoicingResult(
+        chord_type=chord_type,
+        inversion=inversion,
+        chord_family=chord_family,
+        root_note=root_note,
+        positions=tuple(positions),
+        voicing_note=chord_quality.voicing_note,
+    )
 
 
-def _calculate_caged_fret_positions(chord_type, chord_family, root_note):
+def calculate_fret_positions(chord_type, inversion, chord_family, root_note):
+    """Calculate fret positions for a selected guitar chord voicing."""
+    voicing = calculate_voicing(chord_type, inversion, chord_family, root_note)
+    return voicing.frets, voicing.labels
+
+
+def _calculate_caged_voicing(chord_type, inversion, chord_family, root_note):
     root_index = CHROMATIC_SCALE.index(root_note)
     shape = CAGED_SHAPES[chord_type]
     shape_root_index = CHROMATIC_SCALE.index(shape["root_note"])
@@ -397,18 +456,30 @@ def _calculate_caged_fret_positions(chord_type, chord_family, root_note):
     chord_quality = _chord_quality(chord_family, chord_type)
     layout = shape["layouts"][chord_family]
 
-    final_frets = {}
-    final_labels = {}
+    positions = []
 
     for string, (base_fret, interval_type) in layout.items():
         interval_modifier = chord_quality.intervals[interval_type]
         target_pitch = (root_index + interval_modifier) % SEMITONES_PER_OCTAVE
         preferred_fret = base_fret + shape_offset
 
-        final_frets[string] = _nearest_fret_for_pitch(string, target_pitch, preferred_fret)
-        final_labels[string] = chord_quality.display_labels[interval_type]
+        positions.append(
+            FretPosition(
+                string=string,
+                fret=_nearest_fret_for_pitch(string, target_pitch, preferred_fret),
+                label=chord_quality.display_labels[interval_type],
+            )
+        )
 
-    return final_frets, final_labels
+    return VoicingResult(
+        chord_type=chord_type,
+        inversion=inversion,
+        chord_family=chord_family,
+        root_note=root_note,
+        positions=tuple(positions),
+        voicing_note=chord_quality.voicing_note,
+        max_note_count=MAX_NOTES_IN_CAGED_MODEL,
+    )
 
 
 def _nearest_fret_for_pitch(string, target_pitch, preferred_fret):
@@ -426,3 +497,116 @@ def _chord_quality(chord_family, chord_type=None):
     if chord_family in CHORD_QUALITIES:
         return CHORD_QUALITIES[chord_family]
     return CAGED_CHORD_QUALITIES[chord_family]
+
+
+def _validate_chord_qualities(label, qualities):
+    errors = []
+    for name, quality in qualities.items():
+        interval_keys = set(quality.intervals)
+        display_keys = set(quality.display_labels)
+        if interval_keys != display_keys:
+            errors.append(
+                f"{label} {name!r} has interval keys {sorted(interval_keys)} "
+                f"but display-label keys {sorted(display_keys)}."
+            )
+        if "R" not in interval_keys:
+            errors.append(f"{label} {name!r} does not define a root interval.")
+    return errors
+
+
+def _validate_drop_shapes():
+    errors = []
+    for chord_type, inversions in BASE_SHAPES.items():
+        if not inversions:
+            errors.append(f"{chord_type!r} has no inversions.")
+        for inversion, layout in inversions.items():
+            context = f"{chord_type!r} {inversion!r}"
+            errors.extend(_validate_layout(context, layout, CHORD_QUALITIES))
+    return errors
+
+
+def _validate_caged_shapes():
+    errors = []
+    for chord_type, shape in CAGED_SHAPES.items():
+        root_note = shape.get("root_note")
+        if root_note not in CHROMATIC_SCALE:
+            errors.append(f"{chord_type!r} has unsupported root note {root_note!r}.")
+
+        layouts = shape.get("layouts", {})
+        layout_names = set(layouts)
+        quality_names = set(CAGED_CHORD_QUALITIES)
+        missing = quality_names - layout_names
+        extra = layout_names - quality_names
+        if missing:
+            errors.append(f"{chord_type!r} is missing CAGED layouts for {sorted(missing)}.")
+        if extra:
+            errors.append(f"{chord_type!r} has unsupported CAGED layouts for {sorted(extra)}.")
+
+        for chord_family, layout in layouts.items():
+            context = f"{chord_type!r} {chord_family!r}"
+            quality = CAGED_CHORD_QUALITIES.get(chord_family)
+            if quality is None:
+                continue
+            errors.extend(_validate_layout(context, layout, {chord_family: quality}))
+    return errors
+
+
+def _validate_layout(context, layout, qualities):
+    errors = []
+    if not layout:
+        return [f"{context} has no string layout."]
+
+    for string, note in layout.items():
+        if string not in STRING_TUNING_OFFSETS:
+            errors.append(f"{context} uses unsupported string {string!r}.")
+            continue
+        try:
+            fret, interval_type = note
+        except (TypeError, ValueError):
+            errors.append(f"{context} string {string} has invalid note data {note!r}.")
+            continue
+        if not isinstance(fret, int) or fret < 0:
+            errors.append(f"{context} string {string} has invalid fret {fret!r}.")
+        for quality_name, quality in qualities.items():
+            if interval_type not in quality.intervals:
+                errors.append(
+                    f"{context} string {string} uses interval {interval_type!r}, "
+                    f"missing from {quality_name!r} intervals."
+                )
+            if interval_type not in quality.display_labels:
+                errors.append(
+                    f"{context} string {string} uses interval {interval_type!r}, "
+                    f"missing from {quality_name!r} display labels."
+                )
+    return errors
+
+
+def _validate_generated_voicings():
+    errors = []
+    for root_note in CHROMATIC_SCALE:
+        for chord_type in get_chord_types():
+            for chord_family in get_chord_families(chord_type):
+                for inversion in get_inversions(chord_type):
+                    context = f"{root_note} {chord_family} {chord_type} {inversion}"
+                    try:
+                        voicing = calculate_voicing(chord_type, inversion, chord_family, root_note)
+                    except (KeyError, ValueError) as error:
+                        errors.append(f"{context} failed to calculate: {error}.")
+                        continue
+                    if not voicing.positions:
+                        errors.append(f"{context} generated no fret positions.")
+                    if set(voicing.frets) != set(voicing.labels):
+                        errors.append(f"{context} generated mismatched fret and label strings.")
+                    for position in voicing.positions:
+                        if position.string not in STRING_TUNING_OFFSETS:
+                            errors.append(f"{context} generated unsupported string {position.string!r}.")
+                        if position.fret < 0:
+                            errors.append(f"{context} generated negative fret {position.fret}.")
+                        if not position.label:
+                            errors.append(f"{context} generated an empty label.")
+    return errors
+
+
+_MUSIC_DATA_ERRORS = validate_music_data()
+if _MUSIC_DATA_ERRORS:
+    raise ValueError("Invalid music data:\n" + "\n".join(_MUSIC_DATA_ERRORS))

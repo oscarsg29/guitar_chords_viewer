@@ -21,12 +21,14 @@ Rating scale:
   - Larger full extended chords still need curated guitar voicing rules if they require more than four notes.
 - [x] Liskov Substitution Principle: 5/5
   - The app does not use inheritance except `tk.Tk`, so there is no custom inheritance hierarchy to violate.
-- [x] Interface Segregation Principle: 4/5
+- [x] Interface Segregation Principle: 5/5
   - Small getter functions expose UI option lists.
+  - `calculate_voicing()` exposes named result data while `calculate_fret_positions()` remains a compatibility wrapper.
   - Drawing helpers are focused and do not force callers to depend on the full UI.
-- [x] Dependency Inversion Principle: 4/5
+- [x] Dependency Inversion Principle: 5/5
   - UI code depends on pure music functions.
   - Music logic does not depend on `tkinter`.
+  - Architecture tests guard domain modules against UI and app-layer imports.
 - [x] Theory vs Playability Separation: 4/5
   - Chord definitions and physical grip assessment are separated.
   - Playability is computed from generated fret positions instead of hard-coded in the UI.
@@ -49,13 +51,13 @@ Rating scale:
   - Audio synthesis and playback live in `src/guitar_chords_viewer/audio.py`.
   - The UI only passes the selected frets and play mode into the audio layer.
   - The current synth is procedural and dependency-free, so realistic instrument quality is intentionally limited.
-- [x] Testable Core: 4/5
-  - `calculate_fret_positions()` can be tested without opening the GUI.
-  - Unit tests cover supported chord-family options, altered labels, shell labels, CAGED transposition, voicing notes, UI geometry helpers, and playability assessments.
+- [x] Testable Core: 5/5
+  - `calculate_voicing()` can be tested without opening the GUI.
+  - Unit tests cover supported chord-family options, altered labels, shell labels, CAGED transposition, voicing notes, UI geometry helpers, playability assessments, architecture boundaries, and shape-data validation.
 
 ## Overall Rating
 
-Current architecture score: 4.5/5.
+Current architecture score: 5/5.
 
 The app now follows the recommended principles well for a small desktop tool. The most useful next improvement is adding finger-aware playability checks for barre and partial-barre shapes.
 
