@@ -42,6 +42,12 @@ Intention: rate how closely the app follows the documented design principles.
 
 Use this file before and after refactors to identify what improved, what remains partial, and which verification commands to run.
 
+## ARCHITECTURE_IMPROVEMENTS.md
+
+Intention: track prioritized future architecture and design improvements.
+
+Use this file as a roadmap for improvements that are useful but not required for the app to run today.
+
 ## PROJECT_STRUCTURE.md
 
 Intention: document the repository layout and the responsibility of each folder and source file.
