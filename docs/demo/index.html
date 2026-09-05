@@ -3,20 +3,23 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>Guitar Chords Viewer Demo</title>
+  <title>Guitar Chords Viewer</title>
   <style>
     :root {
       color-scheme: dark;
-      --bg: #171717;
-      --panel: #242424;
-      --panel-2: #303030;
-      --text: #f2f2f2;
-      --muted: #c7c7c7;
-      --line: #9f9f9f;
-      --faint: #5f5f5f;
-      --root: #0ba968;
-      --tone: #3378d4;
-      --focus: #e0b94f;
+      --bg: #191919;
+      --panel: #292929;
+      --panel-2: #343238;
+      --panel-3: #202020;
+      --text: #f1f1f1;
+      --muted: #c8c8c8;
+      --quiet: #9f9f9f;
+      --border: #464646;
+      --root: #00a85a;
+      --tone: #2f72d6;
+      --warning: #d4a22f;
+      --danger: #c95e5e;
+      --focus: #ddbd63;
     }
 
     * {
@@ -32,23 +35,23 @@
     }
 
     main {
-      width: min(1180px, calc(100vw - 28px));
+      width: min(1220px, calc(100vw - 28px));
       margin: 0 auto;
-      padding: 24px 0;
+      padding: 22px 0;
     }
 
     header {
       display: flex;
       align-items: end;
       justify-content: space-between;
-      gap: 16px;
+      gap: 18px;
       margin-bottom: 18px;
     }
 
     h1 {
       margin: 0;
-      font-size: clamp(1.8rem, 3.8vw, 3rem);
-      line-height: 1;
+      font-size: 2rem;
+      line-height: 1.08;
       letter-spacing: 0;
     }
 
@@ -59,61 +62,40 @@
       text-align: right;
     }
 
-    .toolbar {
+    .controls {
       display: grid;
-      grid-template-columns: minmax(220px, 320px) 1fr;
-      gap: 16px;
+      grid-template-columns: minmax(116px, 0.8fr) minmax(260px, 1.7fr) minmax(160px, 1fr) minmax(190px, 1.1fr);
+      gap: 12px;
       align-items: end;
-      margin-bottom: 16px;
+      margin-bottom: 14px;
     }
 
     label {
       display: block;
       margin-bottom: 7px;
       color: var(--muted);
-      font-weight: 650;
-    }
-
-    select,
-    button {
-      font: inherit;
+      font-weight: 700;
     }
 
     select {
       width: 100%;
       min-height: 44px;
-      border: 1px solid var(--faint);
+      border: 1px solid var(--border);
       border-radius: 6px;
       background: var(--panel-2);
       color: var(--text);
       padding: 0 12px;
+      font: inherit;
     }
 
-    .quality-tabs {
-      display: flex;
-      flex-wrap: wrap;
-      gap: 8px;
-    }
-
-    .quality-tabs button {
-      min-height: 40px;
-      border: 1px solid var(--faint);
-      border-radius: 6px;
-      background: var(--panel);
-      color: var(--text);
-      padding: 0 14px;
-      cursor: pointer;
-    }
-
-    .quality-tabs button[aria-pressed="true"] {
-      border-color: var(--focus);
-      background: #4a4125;
-      color: #fff4cf;
+    select:focus {
+      outline: 2px solid var(--focus);
+      outline-offset: 2px;
     }
 
     .viewer {
       background: var(--panel);
-      border: 1px solid #3c3c3c;
+      border: 1px solid var(--border);
       border-radius: 8px;
       padding: 16px;
     }
@@ -128,27 +110,29 @@
 
     h2 {
       margin: 0;
-      font-size: 1.15rem;
+      font-size: 1.1rem;
+      line-height: 1.25;
       letter-spacing: 0;
     }
 
-    .badge {
+    .formula {
       display: inline-flex;
       align-items: center;
       min-height: 30px;
+      max-width: 100%;
       border-radius: 999px;
-      background: #173d2e;
-      color: #bff4dc;
+      background: #183d2c;
+      color: #c9f5dd;
       padding: 0 12px;
       font-size: 0.9rem;
-      font-weight: 700;
+      font-weight: 800;
       white-space: nowrap;
     }
 
     .fretboard-wrap {
       overflow-x: auto;
-      background: #101010;
-      border: 1px solid #2c2c2c;
+      background: var(--panel-3);
+      border: 1px solid #303030;
       border-radius: 6px;
     }
 
@@ -157,18 +141,36 @@
       width: 100%;
       min-width: 760px;
       height: auto;
-      aspect-ratio: 16 / 7;
+      aspect-ratio: 7 / 3;
     }
 
-    .status {
-      margin: 12px 0 0;
+    .messages {
+      display: grid;
+      gap: 5px;
+      margin-top: 12px;
       color: var(--muted);
-      font-weight: 600;
+      font-weight: 650;
     }
 
-    @media (max-width: 760px) {
+    .messages p {
+      margin: 0;
+    }
+
+    .playability[data-rating="playable"] {
+      color: #bff2d8;
+    }
+
+    .playability[data-rating="stretchy"] {
+      color: #f0d392;
+    }
+
+    .playability[data-rating="not recommended"] {
+      color: #efb2b2;
+    }
+
+    @media (max-width: 920px) {
       main {
-        width: min(100vw - 18px, 1180px);
+        width: min(100vw - 18px, 1220px);
         padding: 14px 0;
       }
 
@@ -182,16 +184,22 @@
         text-align: left;
       }
 
-      .toolbar {
+      .controls {
+        grid-template-columns: 1fr 1fr;
+      }
+
+      .formula {
+        margin-top: 8px;
+      }
+    }
+
+    @media (max-width: 620px) {
+      .controls {
         grid-template-columns: 1fr;
       }
 
       .viewer {
         padding: 10px;
-      }
-
-      .badge {
-        margin-top: 8px;
       }
     }
   </style>
@@ -199,304 +207,45 @@
 <body>
   <main>
     <header>
-      <h1>Guitar Chords Viewer Demo</h1>
-      <p class="meta">Static browser preview</p>
+      <h1>Advanced Drop Chord Visualizer</h1>
+      <p class="meta">Browser version without audio</p>
     </header>
 
-    <section class="toolbar" aria-label="Chord controls">
+    <section class="controls" aria-label="Chord controls">
       <div>
-        <label for="chordSelect">Chord</label>
-        <select id="chordSelect"></select>
+        <label for="rootNote">Key Root</label>
+        <select id="rootNote"></select>
       </div>
       <div>
-        <label>Voicing</label>
-        <div class="quality-tabs" id="voicingTabs"></div>
+        <label for="chordFamily">Chord Quality</label>
+        <select id="chordFamily"></select>
+      </div>
+      <div>
+        <label for="chordType">Voicing Type</label>
+        <select id="chordType"></select>
+      </div>
+      <div>
+        <label for="inversion">Inversion</label>
+        <select id="inversion"></select>
       </div>
     </section>
 
     <section class="viewer" aria-live="polite">
       <div class="summary">
         <h2 id="title"></h2>
-        <span class="badge" id="badge"></span>
+        <span class="formula" id="formula"></span>
       </div>
       <div class="fretboard-wrap">
         <svg id="fretboard" role="img" aria-labelledby="title"></svg>
       </div>
-      <p class="status" id="status"></p>
+      <div class="messages">
+        <p id="status"></p>
+        <p class="playability" id="playability"></p>
+        <p id="voicingNote"></p>
+      </div>
     </section>
   </main>
 
-  <script>
-    const strings = [
-      { number: 1, name: "E" },
-      { number: 2, name: "B" },
-      { number: 3, name: "G" },
-      { number: 4, name: "D" },
-      { number: 5, name: "A" },
-      { number: 6, name: "E" }
-    ];
-
-    const chords = [
-      {
-        id: "cmaj7",
-        name: "C Major 7",
-        formula: "R-3-5-7",
-        voicings: [
-          {
-            name: "Drop 2 Root",
-            span: "Playable: fret span 0",
-            frets: [
-              { string: 4, fret: 10, label: "R" },
-              { string: 3, fret: 9, label: "5" },
-              { string: 2, fret: 12, label: "7" },
-              { string: 1, fret: 12, label: "3" }
-            ]
-          },
-          {
-            name: "Drop 3 Root",
-            span: "Playable: fret span 1",
-            frets: [
-              { string: 6, fret: 8, label: "R" },
-              { string: 4, fret: 9, label: "7" },
-              { string: 3, fret: 9, label: "3" },
-              { string: 2, fret: 8, label: "5" }
-            ]
-          }
-        ]
-      },
-      {
-        id: "dm7",
-        name: "D Minor 7",
-        formula: "R-b3-5-b7",
-        voicings: [
-          {
-            name: "Drop 2 Root",
-            span: "Playable: fret span 1",
-            frets: [
-              { string: 4, fret: 12, label: "R" },
-              { string: 3, fret: 10, label: "5" },
-              { string: 2, fret: 13, label: "b7" },
-              { string: 1, fret: 13, label: "b3" }
-            ]
-          },
-          {
-            name: "Drop 3 Root",
-            span: "Playable: fret span 2",
-            frets: [
-              { string: 6, fret: 10, label: "R" },
-              { string: 4, fret: 10, label: "b7" },
-              { string: 3, fret: 10, label: "b3" },
-              { string: 2, fret: 10, label: "5" }
-            ]
-          }
-        ]
-      },
-      {
-        id: "g7",
-        name: "G Dominant 7",
-        formula: "R-3-5-b7",
-        voicings: [
-          {
-            name: "Drop 2 Root",
-            span: "Playable: fret span 1",
-            frets: [
-              { string: 4, fret: 5, label: "R" },
-              { string: 3, fret: 4, label: "5" },
-              { string: 2, fret: 6, label: "b7" },
-              { string: 1, fret: 7, label: "3" }
-            ]
-          },
-          {
-            name: "Drop 2 1st Inv",
-            span: "Playable: fret span 2",
-            frets: [
-              { string: 4, fret: 9, label: "3" },
-              { string: 3, fret: 7, label: "b7" },
-              { string: 2, fret: 8, label: "R" },
-              { string: 1, fret: 10, label: "5" }
-            ]
-          }
-        ]
-      },
-      {
-        id: "a6",
-        name: "A Major 6",
-        formula: "R-3-5-6",
-        voicings: [
-          {
-            name: "Drop 3 Root",
-            span: "Playable: fret span 1",
-            frets: [
-              { string: 6, fret: 5, label: "R" },
-              { string: 4, fret: 4, label: "6" },
-              { string: 3, fret: 6, label: "3" },
-              { string: 2, fret: 5, label: "5" }
-            ]
-          },
-          {
-            name: "CAGED Shape",
-            span: "Playable: compact movable grip",
-            frets: [
-              { string: 5, fret: 12, label: "R" },
-              { string: 4, fret: 11, label: "3" },
-              { string: 3, fret: 11, label: "6" },
-              { string: 2, fret: 10, label: "R" },
-              { string: 1, fret: 9, label: "5" }
-            ]
-          }
-        ]
-      }
-    ];
-
-    const chordSelect = document.querySelector("#chordSelect");
-    const voicingTabs = document.querySelector("#voicingTabs");
-    const fretboard = document.querySelector("#fretboard");
-    const title = document.querySelector("#title");
-    const badge = document.querySelector("#badge");
-    const status = document.querySelector("#status");
-    let selectedChord = chords[0];
-    let selectedVoicingIndex = 0;
-
-    function svgEl(tag, attrs = {}) {
-      const element = document.createElementNS("http://www.w3.org/2000/svg", tag);
-      Object.entries(attrs).forEach(([key, value]) => element.setAttribute(key, value));
-      return element;
-    }
-
-    function markerColor(label) {
-      return label === "R" ? "var(--root)" : "var(--tone)";
-    }
-
-    function drawFretboard() {
-      const voicing = selectedChord.voicings[selectedVoicingIndex];
-      const activeFrets = voicing.frets.map((note) => note.fret).filter((fret) => fret > 0);
-      const minFret = Math.max(0, Math.min(...activeFrets) - 2);
-      const maxFret = Math.max(4, Math.max(...activeFrets) + 2);
-      const view = { width: 1100, height: 470, left: 96, right: 34, top: 56, bottom: 70 };
-      const boardWidth = view.width - view.left - view.right;
-      const boardHeight = view.height - view.top - view.bottom;
-      const fretCount = maxFret - minFret;
-      const fretWidth = boardWidth / fretCount;
-      const stringGap = boardHeight / 5;
-
-      fretboard.replaceChildren();
-      fretboard.setAttribute("viewBox", `0 0 ${view.width} ${view.height}`);
-
-      fretboard.appendChild(svgEl("rect", {
-        x: 0,
-        y: 0,
-        width: view.width,
-        height: view.height,
-        fill: "#101010"
-      }));
-
-      strings.forEach((string, index) => {
-        const y = view.top + index * stringGap;
-        const width = 4.6 - index * 0.46;
-        fretboard.appendChild(svgEl("line", {
-          x1: view.left,
-          y1: y,
-          x2: view.width - view.right,
-          y2: y,
-          stroke: "var(--line)",
-          "stroke-width": Math.max(1.2, width)
-        }));
-        const label = svgEl("text", {
-          x: view.left - 24,
-          y: y + 7,
-          fill: "var(--text)",
-          "font-size": 19,
-          "font-weight": 650,
-          "text-anchor": "end"
-        });
-        label.textContent = `${string.name} (${string.number})`;
-        fretboard.appendChild(label);
-      });
-
-      for (let fret = minFret; fret <= maxFret; fret += 1) {
-        const x = view.left + (fret - minFret) * fretWidth;
-        fretboard.appendChild(svgEl("line", {
-          x1: x,
-          y1: view.top,
-          x2: x,
-          y2: view.top + boardHeight,
-          stroke: fret === 0 ? "var(--text)" : "var(--faint)",
-          "stroke-width": fret === 0 ? 5 : 2
-        }));
-        const fretLabel = svgEl("text", {
-          x: x + fretWidth * 0.12,
-          y: view.top + boardHeight + 42,
-          fill: "var(--text)",
-          "font-size": 19,
-          "font-weight": 650,
-          "text-anchor": "middle"
-        });
-        fretLabel.textContent = fret;
-        fretboard.appendChild(fretLabel);
-      }
-
-      voicing.frets.forEach((note) => {
-        const x = view.left + (note.fret - minFret + 0.5) * fretWidth;
-        const y = view.top + (note.string - 1) * stringGap;
-        fretboard.appendChild(svgEl("circle", {
-          cx: x,
-          cy: y,
-          r: 24,
-          fill: markerColor(note.label),
-          stroke: "var(--text)",
-          "stroke-width": 3
-        }));
-        const noteText = svgEl("text", {
-          x: x,
-          y: y + 7,
-          fill: "#fff",
-          "font-size": 18,
-          "font-weight": 800,
-          "text-anchor": "middle"
-        });
-        noteText.textContent = note.label;
-        fretboard.appendChild(noteText);
-      });
-
-      title.textContent = `${selectedChord.name} ${voicing.name}`;
-      badge.textContent = selectedChord.formula;
-      status.textContent = voicing.span;
-    }
-
-    function renderVoicingTabs() {
-      voicingTabs.replaceChildren();
-      selectedChord.voicings.forEach((voicing, index) => {
-        const button = document.createElement("button");
-        button.type = "button";
-        button.textContent = voicing.name;
-        button.setAttribute("aria-pressed", String(index === selectedVoicingIndex));
-        button.addEventListener("click", () => {
-          selectedVoicingIndex = index;
-          renderVoicingTabs();
-          drawFretboard();
-        });
-        voicingTabs.appendChild(button);
-      });
-    }
-
-    function renderChordOptions() {
-      chords.forEach((chord) => {
-        const option = document.createElement("option");
-        option.value = chord.id;
-        option.textContent = chord.name;
-        chordSelect.appendChild(option);
-      });
-      chordSelect.addEventListener("change", () => {
-        selectedChord = chords.find((chord) => chord.id === chordSelect.value);
-        selectedVoicingIndex = 0;
-        renderVoicingTabs();
-        drawFretboard();
-      });
-    }
-
-    renderChordOptions();
-    renderVoicingTabs();
-    drawFretboard();
-  </script>
+  <script src="app.js"></script>
 </body>
 </html>

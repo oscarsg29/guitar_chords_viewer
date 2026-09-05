@@ -26,6 +26,7 @@ This repository is organized so the app code, tests, and documentation have clea
 |-- docs/
 |   |-- index.html
 |   |-- demo/
+|   |   |-- app.js
 |   |   `-- index.html
 |   `-- screenshots/
 |       |-- drop-2-root-position.png
@@ -198,7 +199,7 @@ Screenshot assets referenced by `README.md`.
 
 ### `docs/demo/`
 
-Static HTML/CSS/JavaScript demo for GitHub Pages. It previews a few chords without audio and does not replace the Python desktop app.
+Static HTML/CSS/JavaScript app for GitHub Pages. It mirrors the Python app's chord controls and fretboard rendering without audio.
 
 ### `docs/index.html`
 
