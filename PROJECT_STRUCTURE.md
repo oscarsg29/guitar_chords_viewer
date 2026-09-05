@@ -199,7 +199,7 @@ Screenshot assets referenced by `README.md`.
 
 ### `docs/demo/`
 
-Static HTML/CSS/JavaScript app for GitHub Pages. It mirrors the Python app's chord controls and fretboard rendering without audio.
+Static HTML/CSS/JavaScript app for GitHub Pages. It mirrors the Python app's chord controls, fretboard rendering, and basic audio playback.
 
 ### `docs/index.html`
 

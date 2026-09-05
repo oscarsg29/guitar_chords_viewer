@@ -2082,12 +2082,39 @@ const SELECTORS = {
   status: document.querySelector("#status"),
   playability: document.querySelector("#playability"),
   voicingNote: document.querySelector("#voicingNote"),
+  playMode: document.querySelector("#playMode"),
+  playButton: document.querySelector("#playButton"),
+  audioStatus: document.querySelector("#audioStatus"),
 };
 
 const VIEW = Object.freeze({ width: 1120, height: 480, left: 92, right: 32, top: 54, bottom: 72 });
 const FIRST_STRING = 1;
 const LAST_STRING = 6;
 const STRING_GAP_COUNT = LAST_STRING - FIRST_STRING;
+const PLAY_MODE_CHORD = "Chord";
+const PLAY_MODE_ARPEGGIO = "Arpeggio";
+const STRING_OPEN_MIDI = Object.freeze({ 1: 64, 2: 59, 3: 55, 4: 50, 5: 45, 6: 40 });
+const A4_MIDI_NOTE = 69;
+const A4_FREQUENCY = 440.0;
+const CHORD_DURATION_SECONDS = 1.8;
+const ARPEGGIO_NOTE_DELAY_SECONDS = 0.18;
+const ARPEGGIO_TAIL_SECONDS = 1.15;
+const ATTACK_SECONDS = 0.006;
+const DECAY_RATE = 2.0;
+const PLUCK_BRIGHTNESS_DECAY_RATE = 8.0;
+const PICK_CLICK_DURATION_SECONDS = 0.012;
+const PICK_CLICK_LEVEL = 0.14;
+const CLEAN_HEADROOM = 0.28;
+const CENTS_PER_OCTAVE = 1200;
+const OVERTONE_WEIGHTS = Object.freeze([
+  [1, 1.0],
+  [2, 0.46],
+  [3, 0.24],
+  [4, 0.12],
+  [5, 0.06],
+]);
+const STRING_DETUNE_CENTS = Object.freeze({ 1: 1.5, 2: -1.0, 3: 0.8, 4: -0.7, 5: 0.4, 6: -0.5 });
+let audioContext = null;
 
 function isCagedShape(chordType) {
   return Object.prototype.hasOwnProperty.call(MUSIC_DATA.cagedShapes, chordType);
@@ -2236,6 +2263,110 @@ function assessPlayability(voicing) {
   return { rating: "not recommended", fretSpan, message: `Not recommended: fret span ${fretSpan}. ${voicing.voicingNote}` };
 }
 
+function midiNoteForPosition(string, fret) {
+  return STRING_OPEN_MIDI[string] + fret;
+}
+
+function frequencyForMidiNote(midiNote) {
+  const octaveDistance = (midiNote - A4_MIDI_NOTE) / MUSIC_DATA.semitonesPerOctave;
+  return A4_FREQUENCY * (2 ** octaveDistance);
+}
+
+function detunedFrequency(midiNote, string) {
+  const cents = STRING_DETUNE_CENTS[string] ?? 0;
+  return frequencyForMidiNote(midiNote) * (2 ** (cents / CENTS_PER_OCTAVE));
+}
+
+function notesForVoicing(voicing) {
+  return voicing.positions
+    .map((position) => {
+      const midiNote = midiNoteForPosition(position.string, position.fret);
+      return {
+        string: position.string,
+        midiNote,
+        frequency: detunedFrequency(midiNote, position.string),
+      };
+    })
+    .sort((left, right) => left.midiNote - right.midiNote);
+}
+
+function noteEventsForVoicing(voicing, playMode) {
+  const notes = notesForVoicing(voicing);
+  if (playMode === PLAY_MODE_ARPEGGIO) {
+    return notes.map((note, index) => ({ ...note, startDelay: index * ARPEGGIO_NOTE_DELAY_SECONDS }));
+  }
+  return notes.map((note) => ({ ...note, startDelay: 0 }));
+}
+
+function renderDuration(events) {
+  if (events.length === 0) {
+    return CHORD_DURATION_SECONDS;
+  }
+  const lastStart = Math.max(...events.map((event) => event.startDelay));
+  return Math.max(CHORD_DURATION_SECONDS, lastStart + ARPEGGIO_TAIL_SECONDS);
+}
+
+async function playVoicing(voicing, playMode) {
+  const AudioContextClass = window.AudioContext || window.webkitAudioContext;
+  if (!AudioContextClass) {
+    SELECTORS.audioStatus.textContent = "Audio playback is not available in this browser.";
+    return;
+  }
+
+  audioContext = audioContext || new AudioContextClass();
+  if (audioContext.state === "suspended") {
+    await audioContext.resume();
+  }
+
+  const events = noteEventsForVoicing(voicing, playMode);
+  const duration = renderDuration(events);
+  const startedAt = audioContext.currentTime + 0.025;
+  const masterGain = audioContext.createGain();
+  masterGain.gain.setValueAtTime(CLEAN_HEADROOM / Math.max(events.length, 1), startedAt);
+  masterGain.connect(audioContext.destination);
+
+  events.forEach((event) => {
+    scheduleCleanGuitarNote(masterGain, event.frequency, startedAt + event.startDelay, duration - event.startDelay);
+  });
+
+  setTimeout(() => masterGain.disconnect(), Math.ceil((duration + 0.15) * 1000));
+  SELECTORS.audioStatus.textContent = `Playing selected chord as ${playMode.toLowerCase()}.`;
+}
+
+function scheduleCleanGuitarNote(destination, frequency, startTime, duration) {
+  const noteGain = audioContext.createGain();
+  noteGain.gain.setValueAtTime(0, startTime);
+  noteGain.gain.linearRampToValueAtTime(1, startTime + ATTACK_SECONDS);
+  noteGain.gain.exponentialRampToValueAtTime(0.001, startTime + duration);
+  noteGain.connect(destination);
+
+  OVERTONE_WEIGHTS.forEach(([harmonic, weight]) => {
+    const oscillator = audioContext.createOscillator();
+    const harmonicGain = audioContext.createGain();
+    oscillator.type = "sine";
+    oscillator.frequency.setValueAtTime(frequency * harmonic, startTime);
+    harmonicGain.gain.setValueAtTime(weight, startTime);
+    if (harmonic > 1) {
+      harmonicGain.gain.exponentialRampToValueAtTime(0.001, startTime + (1 / PLUCK_BRIGHTNESS_DECAY_RATE));
+    }
+    oscillator.connect(harmonicGain);
+    harmonicGain.connect(noteGain);
+    oscillator.start(startTime);
+    oscillator.stop(startTime + duration);
+  });
+
+  const click = audioContext.createOscillator();
+  const clickGain = audioContext.createGain();
+  click.type = "sine";
+  click.frequency.setValueAtTime(frequency * 7, startTime);
+  clickGain.gain.setValueAtTime(PICK_CLICK_LEVEL, startTime);
+  clickGain.gain.linearRampToValueAtTime(0, startTime + PICK_CLICK_DURATION_SECONDS);
+  click.connect(clickGain);
+  clickGain.connect(noteGain);
+  click.start(startTime);
+  click.stop(startTime + PICK_CLICK_DURATION_SECONDS);
+}
+
 function fretGridBounds(frets) {
   return [
     Math.max(MUSIC_DATA.gridMinFret, Math.min(...frets) - MUSIC_DATA.fretPaddingBefore),
@@ -2363,6 +2494,7 @@ function updateView() {
   SELECTORS.status.textContent = `Showing ${voicing.rootNote} ${voicing.chordFamily} as ${voicing.chordType} (${voicing.inversion}).`;
   SELECTORS.playability.textContent = playability.message;
   SELECTORS.playability.dataset.rating = playability.rating;
+  SELECTORS.audioStatus.textContent = "";
   SELECTORS.voicingNote.textContent = voicing.voicingNote;
   drawFretboard(voicing);
 }
@@ -2374,6 +2506,15 @@ function init() {
 
   [SELECTORS.rootNote, SELECTORS.chordFamily, SELECTORS.chordType, SELECTORS.inversion].forEach((select) => {
     select.addEventListener("change", updateView);
+  });
+  SELECTORS.playButton.addEventListener("click", () => {
+    const voicing = calculateVoicing(
+      SELECTORS.chordType.value,
+      SELECTORS.inversion.value,
+      SELECTORS.chordFamily.value,
+      SELECTORS.rootNote.value
+    );
+    playVoicing(voicing, SELECTORS.playMode.value);
   });
   updateView();
 }
