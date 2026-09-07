@@ -10,7 +10,9 @@ SRC_DIR = PROJECT_ROOT / "src"
 sys.path.insert(0, str(SRC_DIR))
 
 from guitar_chords_viewer.music_theory import (
+    CHROMATIC_SCALE,
     FretPosition,
+    STRING_TUNING_OFFSETS,
     VoicingResult,
     calculate_fret_positions,
     calculate_voicing,
@@ -21,6 +23,7 @@ from guitar_chords_viewer.music_theory import (
     get_root_notes,
     get_voicing_note,
     validate_music_data,
+    _chord_quality,
 )
 
 
@@ -55,6 +58,33 @@ class MusicTheoryTests(unittest.TestCase):
 
     def test_music_data_validation_passes(self):
         self.assertEqual(validate_music_data(), [])
+
+    def test_all_generated_voicings_match_their_chord_tones(self):
+        for root_note in get_root_notes():
+            root_index = CHROMATIC_SCALE.index(root_note)
+            for chord_type in get_chord_types():
+                for chord_family in get_chord_families(chord_type):
+                    quality = _chord_quality(chord_family, chord_type)
+                    label_to_pitch = {
+                        quality.display_labels[interval_type]: (
+                            root_index + quality.intervals[interval_type]
+                        )
+                        % len(CHROMATIC_SCALE)
+                        for interval_type in quality.intervals
+                    }
+                    for inversion in get_inversions(chord_type):
+                        with self.subTest(
+                            root_note=root_note,
+                            chord_type=chord_type,
+                            chord_family=chord_family,
+                            inversion=inversion,
+                        ):
+                            voicing = calculate_voicing(chord_type, inversion, chord_family, root_note)
+                            for position in voicing.positions:
+                                actual_pitch = (
+                                    STRING_TUNING_OFFSETS[position.string] + position.fret
+                                ) % len(CHROMATIC_SCALE)
+                                self.assertEqual(actual_pitch, label_to_pitch[position.label])
 
     def test_supported_four_note_playable_chord_families(self):
         expected = {

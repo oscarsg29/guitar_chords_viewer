@@ -2064,6 +2064,7 @@ const MUSIC_DATA = {
   "easyMaxFretSpan": 3,
   "stretchyMaxFretSpan": 5,
   "maxRecommendedFret": 18,
+  "maxOpenStringFrettedPosition": 5,
   "openFret": 0,
   "gridMinFret": 0,
   "minVisibleFretSpan": 4,
@@ -2092,6 +2093,7 @@ const FIRST_STRING = 1;
 const LAST_STRING = 6;
 const STRING_GAP_COUNT = LAST_STRING - FIRST_STRING;
 const MIN_WEB_VISIBLE_FRET_SPAN = 8;
+const OPEN_MARKER_LEFT_OFFSET = 26;
 const PLAY_MODE_CHORD = "Chord";
 const PLAY_MODE_ARPEGGIO = "Arpeggio";
 const STRING_OPEN_MIDI = Object.freeze({ 1: 64, 2: 59, 3: 55, 4: 50, 5: 45, 6: 40 });
@@ -2250,6 +2252,18 @@ function assessPlayability(voicing) {
       rating: "not recommended",
       fretSpan,
       message: `Not recommended: highest fret is above ${MUSIC_DATA.maxRecommendedFret}. ${voicing.voicingNote}`,
+    };
+  }
+
+  if (
+    frets.some((fret) => fret === MUSIC_DATA.openFret)
+    && frettedPositions.length
+    && Math.max(...frettedPositions) > MUSIC_DATA.maxOpenStringFrettedPosition
+  ) {
+    return {
+      rating: "not recommended",
+      fretSpan,
+      message: `Not recommended: open strings mixed with a high-position fretted note. ${voicing.voicingNote}`,
     };
   }
 
@@ -2448,7 +2462,7 @@ function drawFretboard(voicing) {
       "font-weight": 650,
       "text-anchor": "end",
     });
-    stringLabel.textContent = `${MUSIC_DATA.stringNames[string]} (${string})`;
+    stringLabel.textContent = MUSIC_DATA.stringNames[string];
     SELECTORS.fretboard.appendChild(stringLabel);
   }
 
@@ -2476,7 +2490,7 @@ function drawFretboard(voicing) {
 
   voicing.positions.forEach((position) => {
     const fretX = VIEW.left + (position.fret - minFret) * fretWidth;
-    const x = position.fret === 0 ? fretX + fretWidth * 0.5 : fretX - fretWidth * 0.5;
+    const x = position.fret === 0 ? fretX - OPEN_MARKER_LEFT_OFFSET : fretX - fretWidth * 0.5;
     const y = VIEW.top + (position.string - FIRST_STRING) * stringGap;
     SELECTORS.fretboard.appendChild(svgEl("circle", {
       cx: x,

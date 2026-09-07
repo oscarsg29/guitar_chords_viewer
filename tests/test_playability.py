@@ -37,6 +37,12 @@ class PlayabilityTests(unittest.TestCase):
         self.assertEqual(assessment.rating, EASY)
         self.assertEqual(assessment.fret_span, 1)
 
+    def test_open_strings_mixed_with_high_position_are_not_recommended(self):
+        assessment = assess_playability({4: 10, 3: 0, 2: 0, 1: 0}, "Test voicing.")
+
+        self.assertEqual(assessment.rating, NOT_RECOMMENDED)
+        self.assertIn("open strings mixed with a high-position", assessment.message)
+
     def test_default_model_rejects_more_than_four_sounded_strings(self):
         assessment = assess_playability({6: 3, 5: 2, 4: 0, 3: 0, 2: 0, 1: 3}, "Test voicing.")
 

@@ -37,6 +37,7 @@ STRING_BASE_WIDTH = 1
 LOW_STRING_WIDTH_REFERENCE = 6
 STRING_WIDTH_STEP = 0.45
 STRING_LABEL_X_OFFSET = 18
+OPEN_MARKER_LEFT_OFFSET = 26
 NOTE_MARKER_BEHIND_FRET_RATIO = 0.5
 
 
@@ -57,7 +58,7 @@ def note_marker_x(fret, min_grid, fret_width):
     """Return the note marker x-coordinate in the fret space behind a fret."""
     fret_position = fret_x(fret, min_grid, fret_width)
     if fret == NUT_FRET:
-        return fret_position + fret_width * NOTE_MARKER_BEHIND_FRET_RATIO
+        return fret_position - OPEN_MARKER_LEFT_OFFSET
     return fret_position - fret_width * NOTE_MARKER_BEHIND_FRET_RATIO
 
 

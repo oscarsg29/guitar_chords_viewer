@@ -55,11 +55,11 @@ from guitar_chords_viewer.music_theory import (
 APP_TITLE = "Advanced Drop Chord Visualizer"
 AUTHOR_NAME = "Oscar Osorio"
 AUTHOR_INSTAGRAM = "bones29sg"
-DEFAULT_WINDOW_WIDTH = 920
-DEFAULT_WINDOW_HEIGHT = 560
+DEFAULT_WINDOW_WIDTH = 1280
+DEFAULT_WINDOW_HEIGHT = 720
 DEFAULT_WINDOW_SIZE = f"{DEFAULT_WINDOW_WIDTH}x{DEFAULT_WINDOW_HEIGHT}"
-MIN_WINDOW_WIDTH = 760
-MIN_WINDOW_HEIGHT = 460
+MIN_WINDOW_WIDTH = 1180
+MIN_WINDOW_HEIGHT = 620
 SCREEN_ORIGIN = 0
 ALWAYS_ON_TOP = True
 FIRST_OPTION_INDEX = 0
@@ -72,13 +72,16 @@ INSTAGRAM_ICON_STROKE = "#202124"
 TITLE_FONT = ("Helvetica", 20, "bold")
 TITLE_ROW = 0
 CONTROLS_ROW = 1
+GROUP_CONTROLS_ROW = 0
 FIRST_CONTROL_COLUMN = 0
 CONTROL_COLUMN_PADDING = 8
 CONTROL_COLUMN_COUNT = 3
 TITLE_COLUMNSPAN = CONTROL_COLUMN_COUNT
 TITLE_BOTTOM_PADDING = 10
 SELECTOR_TOP_PADDING = 4
+STATUS_TOP_PADDING = 10
 GROUP_INNER_PADDING = 10
+INFO_WRAP_LENGTH = 260
 
 KEY_ROOT_COLUMN = 0
 CHORD_QUALITY_COLUMN = 1
@@ -130,7 +133,7 @@ class GuitarChordViewer(tk.Tk):
         self.audio_status = tk.StringVar()
         self.footer = tk.StringVar(
             value=(
-                f"Version: {current_version_label()} | Author: {AUTHOR_NAME} | Instagram"
+                f"Version: {current_version_label()} | Author: {AUTHOR_NAME}"
             )
         )
 
@@ -199,17 +202,24 @@ class GuitarChordViewer(tk.Tk):
 
         info_group = ttk.LabelFrame(header, text="Info", padding=GROUP_INNER_PADDING)
         info_group.grid(row=CONTROLS_ROW, column=INFO_COLUMN, sticky="nsew", padx=(CONTROL_COLUMN_PADDING, 0))
-        ttk.Label(info_group, textvariable=self.playability).pack(anchor="w")
-        ttk.Label(info_group, textvariable=self.status, wraplength=320).pack(anchor="w", pady=(SELECTOR_TOP_PADDING, 0))
-        ttk.Label(info_group, textvariable=self.audio_status).pack(anchor="w", pady=(SELECTOR_TOP_PADDING, 0))
+        ttk.Label(info_group, textvariable=self.playability, wraplength=INFO_WRAP_LENGTH).pack(anchor="w")
+        ttk.Label(info_group, textvariable=self.status, wraplength=INFO_WRAP_LENGTH).pack(
+            anchor="w",
+            pady=(SELECTOR_TOP_PADDING, 0),
+        )
+        ttk.Label(info_group, textvariable=self.audio_status, wraplength=INFO_WRAP_LENGTH).pack(
+            anchor="w",
+            pady=(SELECTOR_TOP_PADDING, 0),
+        )
 
-        for column in range(CONTROL_COLUMN_COUNT):
-            header.columnconfigure(column, weight=1)
+        header.columnconfigure(FIRST_CONTROL_COLUMN, weight=5)
+        header.columnconfigure(PLAYBACK_COLUMN, weight=2)
+        header.columnconfigure(INFO_COLUMN, weight=3)
 
     def _add_selector(self, parent, label_text, variable, values, column):
         frame = ttk.Frame(parent)
         left_padding = 0 if column == FIRST_CONTROL_COLUMN else CONTROL_COLUMN_PADDING
-        frame.grid(row=CONTROLS_ROW, column=column, sticky="ew", padx=(left_padding, 0))
+        frame.grid(row=GROUP_CONTROLS_ROW, column=column, sticky="ew", padx=(left_padding, 0))
 
         ttk.Label(frame, text=label_text).pack(anchor="w")
         menu = ttk.OptionMenu(frame, variable, variable.get(), *values)
@@ -218,7 +228,7 @@ class GuitarChordViewer(tk.Tk):
 
     def _add_play_button(self, parent):
         frame = ttk.Frame(parent)
-        frame.grid(row=CONTROLS_ROW, column=1, sticky="ew", padx=(CONTROL_COLUMN_PADDING, 0))
+        frame.grid(row=GROUP_CONTROLS_ROW, column=1, sticky="ew", padx=(CONTROL_COLUMN_PADDING, 0))
 
         ttk.Label(frame, text="Audio").pack(anchor="w")
         button = ttk.Button(frame, text="▶ Play", command=self._play_selected_chord)
@@ -230,6 +240,13 @@ class GuitarChordViewer(tk.Tk):
 
         self.canvas = tk.Canvas(body, background=CANVAS_BACKGROUND, highlightthickness=0)
         self.canvas.pack(fill=tk.BOTH, expand=True)
+
+        status_label = ttk.Label(body, textvariable=self.status)
+        status_label.pack(anchor="w", pady=(STATUS_TOP_PADDING, 0))
+        playability_label = ttk.Label(body, textvariable=self.playability)
+        playability_label.pack(anchor="w")
+        audio_status_label = ttk.Label(body, textvariable=self.audio_status)
+        audio_status_label.pack(anchor="w")
 
         self.canvas.bind("<Configure>", lambda _event: self.draw_fretboard())
 
@@ -349,7 +366,7 @@ class GuitarChordViewer(tk.Tk):
             self.canvas.create_text(
                 MARGIN_LEFT - STRING_LABEL_X_OFFSET,
                 y,
-                text=f"{STRING_NAMES[string]} ({string})",
+                text=STRING_NAMES[string],
                 fill=TEXT_COLOR,
                 anchor="e",
             )

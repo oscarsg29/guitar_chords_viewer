@@ -12,6 +12,7 @@ MAX_NOTES_IN_CAGED_MODEL = 6
 EASY_MAX_FRET_SPAN = 3
 STRETCHY_MAX_FRET_SPAN = 5
 MAX_RECOMMENDED_FRET = 18
+MAX_OPEN_STRING_FRETTED_POSITION = 5
 OPEN_FRET = 0
 
 
@@ -47,6 +48,17 @@ def assess_playability(frets, voicing_note, max_note_count=MAX_NOTES_IN_DROP_MOD
             message=f"Not recommended: highest fret is above {MAX_RECOMMENDED_FRET}. {voicing_note}",
         )
 
+    if _mixes_open_strings_with_high_position(frets, fretted_positions):
+        return PlayabilityAssessment(
+            rating=NOT_RECOMMENDED,
+            fret_span=fret_span,
+            fretted_note_count=fretted_note_count,
+            message=(
+                "Not recommended: open strings mixed with a high-position fretted note. "
+                f"{voicing_note}"
+            ),
+        )
+
     if fret_span <= EASY_MAX_FRET_SPAN:
         return PlayabilityAssessment(
             rating=EASY,
@@ -75,3 +87,11 @@ def _fret_span(fretted_positions):
     if not fretted_positions:
         return 0
     return max(fretted_positions) - min(fretted_positions)
+
+
+def _mixes_open_strings_with_high_position(frets, fretted_positions):
+    return (
+        any(fret == OPEN_FRET for fret in frets.values())
+        and bool(fretted_positions)
+        and max(fretted_positions) > MAX_OPEN_STRING_FRETTED_POSITION
+    )
