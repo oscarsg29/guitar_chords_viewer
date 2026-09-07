@@ -6,22 +6,25 @@
   <title>Guitar Chords Viewer</title>
   <style>
     :root {
-      color-scheme: dark;
-      --bg: #191919;
-      --panel: #292929;
-      --panel-2: #343238;
-      --panel-3: #202020;
-      --text: #f1f1f1;
-      --muted: #c8c8c8;
-      --quiet: #9f9f9f;
-      --border: #464646;
+      color-scheme: light;
+      --bg: #f6f7f8;
+      --panel: #ffffff;
+      --panel-2: #f9fafb;
+      --panel-3: #ffffff;
+      --text: #202124;
+      --muted: #555f6d;
+      --quiet: #747c87;
+      --border: #d4d9df;
       --root: #00a85a;
       --tone: #2f72d6;
       --warning: #d4a22f;
       --danger: #c95e5e;
-      --focus: #ddbd63;
-      --button: #5b5762;
-      --button-hover: #68636f;
+      --focus: #1f63b7;
+      --button: #1f63b7;
+      --button-hover: #174f94;
+      --success-bg: #e6f6ec;
+      --success-text: #226b39;
+      --success-border: #8fd1a3;
     }
 
     * {
@@ -47,7 +50,7 @@
       align-items: end;
       justify-content: space-between;
       gap: 18px;
-      margin-bottom: 18px;
+      margin-bottom: 14px;
     }
 
     h1 {
@@ -57,26 +60,60 @@
       letter-spacing: 0;
     }
 
-    .meta {
-      margin: 0;
+    .meta,
+    .app-footer {
       color: var(--muted);
       font-size: 0.95rem;
+    }
+
+    .meta {
+      margin: 0;
       text-align: right;
     }
 
     .controls {
       display: grid;
-      grid-template-columns: minmax(116px, 0.8fr) minmax(260px, 1.7fr) minmax(160px, 1fr) minmax(190px, 1.1fr);
+      grid-template-columns: minmax(520px, 1.8fr) minmax(240px, 0.8fr) minmax(300px, 1fr);
+      gap: 14px;
+      align-items: stretch;
+      margin-bottom: 14px;
+    }
+
+    .control-group {
+      min-width: 0;
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      background: var(--panel);
+      padding: 12px 14px 14px;
+    }
+
+    .control-group h2 {
+      margin: 0 0 14px;
+      color: #1f63b7;
+      font-size: 1rem;
+      line-height: 1.2;
+      letter-spacing: 0;
+    }
+
+    .control-grid {
+      display: grid;
+      grid-template-columns: repeat(4, minmax(0, 1fr));
       gap: 12px;
       align-items: end;
-      margin-bottom: 14px;
+    }
+
+    .playback-grid {
+      display: grid;
+      grid-template-columns: minmax(0, 1fr) 56px;
+      gap: 12px;
+      align-items: end;
     }
 
     label {
       display: block;
       margin-bottom: 7px;
       color: var(--muted);
-      font-weight: 700;
+      font-weight: 650;
     }
 
     select {
@@ -101,6 +138,13 @@
       font: inherit;
       font-weight: 700;
       cursor: pointer;
+    }
+
+    .play-button {
+      display: inline-grid;
+      place-items: center;
+      padding: 0;
+      font-size: 1.25rem;
     }
 
     button:hover,
@@ -146,8 +190,9 @@
       min-height: 30px;
       max-width: 100%;
       border-radius: 999px;
-      background: #183d2c;
-      color: #c9f5dd;
+      background: var(--success-bg);
+      color: var(--success-text);
+      border: 1px solid var(--success-border);
       padding: 0 12px;
       font-size: 0.9rem;
       font-weight: 800;
@@ -157,7 +202,7 @@
     .fretboard-wrap {
       overflow: hidden;
       background: var(--panel-3);
-      border: 1px solid #303030;
+      border: 1px solid var(--border);
       border-radius: 6px;
     }
 
@@ -171,7 +216,7 @@
     .messages {
       display: grid;
       gap: 5px;
-      margin-top: 12px;
+      margin-top: 0;
       color: var(--muted);
       font-weight: 650;
     }
@@ -181,15 +226,36 @@
     }
 
     .playability[data-rating="playable"] {
-      color: #bff2d8;
+      display: inline-flex;
+      width: fit-content;
+      border: 1px solid var(--success-border);
+      border-radius: 6px;
+      background: var(--success-bg);
+      color: var(--success-text);
+      padding: 5px 9px;
     }
 
     .playability[data-rating="stretchy"] {
-      color: #f0d392;
+      color: #7a5700;
     }
 
     .playability[data-rating="not recommended"] {
-      color: #efb2b2;
+      color: #9d3030;
+    }
+
+    .app-footer {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      margin-top: 12px;
+      padding: 0 2px;
+    }
+
+    .instagram-icon {
+      width: 18px;
+      height: 18px;
+      flex: 0 0 auto;
+      color: #202124;
     }
 
     @media (max-width: 920px) {
@@ -209,16 +275,21 @@
       }
 
       .controls {
-        grid-template-columns: 1fr 1fr;
+        grid-template-columns: 1fr;
       }
 
       .formula {
         margin-top: 8px;
       }
+
+      .control-grid {
+        grid-template-columns: 1fr 1fr;
+      }
     }
 
     @media (max-width: 620px) {
-      .controls {
+      .control-grid,
+      .playback-grid {
         grid-template-columns: 1fr;
       }
 
@@ -236,36 +307,55 @@
     </header>
 
     <section class="controls" aria-label="Chord controls">
-      <div>
-        <label for="rootNote">Key Root</label>
-        <select id="rootNote"></select>
+      <div class="control-group">
+        <h2>Chord</h2>
+        <div class="control-grid">
+          <div>
+            <label for="rootNote">Key Root</label>
+            <select id="rootNote"></select>
+          </div>
+          <div>
+            <label for="chordFamily">Chord Quality</label>
+            <select id="chordFamily"></select>
+          </div>
+          <div>
+            <label for="chordType">Drop Type</label>
+            <select id="chordType"></select>
+          </div>
+          <div>
+            <label for="inversion">Inversion</label>
+            <select id="inversion"></select>
+          </div>
+        </div>
       </div>
-      <div>
-        <label for="chordFamily">Chord Quality</label>
-        <select id="chordFamily"></select>
+      <div class="control-group">
+        <h2>Playback</h2>
+        <div class="playback-grid">
+          <div>
+            <label for="playMode">Play Mode</label>
+            <select id="playMode">
+              <option value="Chord">Chord</option>
+              <option value="Arpeggio">Arpeggio</option>
+            </select>
+          </div>
+          <div>
+            <label for="playButton">Audio</label>
+            <button class="play-button" id="playButton" type="button" aria-label="Play selected chord">▶</button>
+          </div>
+        </div>
       </div>
-      <div>
-        <label for="chordType">Voicing Type</label>
-        <select id="chordType"></select>
-      </div>
-      <div>
-        <label for="inversion">Inversion</label>
-        <select id="inversion"></select>
-      </div>
-      <div>
-        <label for="playMode">Play Mode</label>
-        <select id="playMode">
-          <option value="Chord">Chord</option>
-          <option value="Arpeggio">Arpeggio</option>
-        </select>
-      </div>
-      <div>
-        <label for="playButton">Audio</label>
-        <button id="playButton" type="button">Play</button>
+      <div class="control-group">
+        <h2>Info</h2>
+        <div class="messages" aria-live="polite">
+          <p class="playability" id="playability"></p>
+          <p id="status"></p>
+          <p id="audioStatus"></p>
+          <p id="voicingNote"></p>
+        </div>
       </div>
     </section>
 
-    <section class="viewer" aria-live="polite">
+    <section class="viewer">
       <div class="summary">
         <h2 id="title"></h2>
         <span class="formula" id="formula"></span>
@@ -273,13 +363,16 @@
       <div class="fretboard-wrap">
         <svg id="fretboard" role="img" aria-labelledby="title"></svg>
       </div>
-      <div class="messages">
-        <p id="status"></p>
-        <p class="playability" id="playability"></p>
-        <p id="audioStatus"></p>
-        <p id="voicingNote"></p>
-      </div>
     </section>
+    <footer class="app-footer">
+      <span>Version: local build | Author: Oscar Osorio | Instagram</span>
+      <svg class="instagram-icon" viewBox="0 0 24 24" aria-label="Instagram" role="img">
+        <rect x="3" y="3" width="18" height="18" rx="5" fill="none" stroke="currentColor" stroke-width="2"></rect>
+        <circle cx="12" cy="12" r="4" fill="none" stroke="currentColor" stroke-width="2"></circle>
+        <circle cx="17.5" cy="6.5" r="1.3" fill="currentColor"></circle>
+      </svg>
+      <span>@bones29sg</span>
+    </footer>
   </main>
 
   <script src="app.js"></script>

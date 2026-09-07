@@ -1,5 +1,7 @@
 """Tkinter user interface for the guitar chord viewer."""
 
+from pathlib import Path
+import subprocess
 import tkinter as tk
 from tkinter import ttk
 
@@ -51,6 +53,8 @@ from guitar_chords_viewer.music_theory import (
 
 
 APP_TITLE = "Advanced Drop Chord Visualizer"
+AUTHOR_NAME = "Oscar Osorio"
+AUTHOR_INSTAGRAM = "bones29sg"
 DEFAULT_WINDOW_WIDTH = 920
 DEFAULT_WINDOW_HEIGHT = 560
 DEFAULT_WINDOW_SIZE = f"{DEFAULT_WINDOW_WIDTH}x{DEFAULT_WINDOW_HEIGHT}"
@@ -62,23 +66,27 @@ FIRST_OPTION_INDEX = 0
 
 HEADER_PADDING = (18, 14, 18, 8)
 BODY_PADDING = (18, 8, 18, 14)
+FOOTER_PADDING = (18, 0, 18, 12)
+INSTAGRAM_ICON_SIZE = 18
+INSTAGRAM_ICON_STROKE = "#202124"
 TITLE_FONT = ("Helvetica", 20, "bold")
 TITLE_ROW = 0
 CONTROLS_ROW = 1
 FIRST_CONTROL_COLUMN = 0
 CONTROL_COLUMN_PADDING = 8
-CONTROL_COLUMN_COUNT = 6
+CONTROL_COLUMN_COUNT = 3
 TITLE_COLUMNSPAN = CONTROL_COLUMN_COUNT
 TITLE_BOTTOM_PADDING = 10
 SELECTOR_TOP_PADDING = 4
-STATUS_TOP_PADDING = 10
+GROUP_INNER_PADDING = 10
 
 KEY_ROOT_COLUMN = 0
 CHORD_QUALITY_COLUMN = 1
 DROP_TYPE_COLUMN = 2
 INVERSION_COLUMN = 3
-PLAY_MODE_COLUMN = 4
-PLAY_BUTTON_COLUMN = 5
+PLAYBACK_COLUMN = 1
+INFO_COLUMN = 2
+CHORD_CONTROL_COLUMN_COUNT = 4
 
 
 def centered_geometry(window_width, window_height, screen_width, screen_height):
@@ -86,6 +94,21 @@ def centered_geometry(window_width, window_height, screen_width, screen_height):
     left = max(SCREEN_ORIGIN, (screen_width - window_width) // 2)
     top = max(SCREEN_ORIGIN, (screen_height - window_height) // 2)
     return f"{window_width}x{window_height}+{left}+{top}"
+
+
+def current_version_label():
+    """Return a short git commit label when the app is running from a checkout."""
+    project_root = Path(__file__).resolve().parents[2]
+    try:
+        commit = subprocess.check_output(
+            ["git", "-C", str(project_root), "rev-parse", "--short", "HEAD"],
+            stderr=subprocess.DEVNULL,
+            text=True,
+            timeout=1,
+        ).strip()
+    except (OSError, subprocess.SubprocessError):
+        return "local build"
+    return f"commit {commit}" if commit else "local build"
 
 
 class GuitarChordViewer(tk.Tk):
@@ -105,9 +128,15 @@ class GuitarChordViewer(tk.Tk):
         self.status = tk.StringVar()
         self.playability = tk.StringVar()
         self.audio_status = tk.StringVar()
+        self.footer = tk.StringVar(
+            value=(
+                f"Version: {current_version_label()} | Author: {AUTHOR_NAME} | Instagram"
+            )
+        )
 
         self._build_controls()
         self._build_canvas()
+        self._build_footer()
         self._bind_updates()
         self.draw_fretboard()
 
@@ -137,24 +166,42 @@ class GuitarChordViewer(tk.Tk):
             pady=(0, TITLE_BOTTOM_PADDING),
         )
 
-        self._add_selector(header, "Key Root", self.root_note, get_root_notes(), KEY_ROOT_COLUMN)
+        chord_group = ttk.LabelFrame(header, text="Chord", padding=GROUP_INNER_PADDING)
+        chord_group.grid(row=CONTROLS_ROW, column=FIRST_CONTROL_COLUMN, sticky="nsew")
+        self._add_selector(chord_group, "Key Root", self.root_note, get_root_notes(), KEY_ROOT_COLUMN)
         self.chord_family_menu = self._add_selector(
-            header,
+            chord_group,
             "Chord Quality",
             self.chord_family,
             get_chord_families(self.chord_type.get()),
             CHORD_QUALITY_COLUMN,
         )
-        self._add_selector(header, "Drop Type", self.chord_type, get_chord_types(), DROP_TYPE_COLUMN)
+        self._add_selector(chord_group, "Drop Type", self.chord_type, get_chord_types(), DROP_TYPE_COLUMN)
         self.inversion_menu = self._add_selector(
-            header,
+            chord_group,
             "Inversion",
             self.inversion,
             get_inversions(self.chord_type.get()),
             INVERSION_COLUMN,
         )
-        self._add_selector(header, "Play Mode", self.play_mode, PLAY_MODES, PLAY_MODE_COLUMN)
-        self._add_play_button(header)
+        for column in range(CHORD_CONTROL_COLUMN_COUNT):
+            chord_group.columnconfigure(column, weight=1)
+
+        playback_group = ttk.LabelFrame(header, text="Playback", padding=GROUP_INNER_PADDING)
+        playback_group.grid(
+            row=CONTROLS_ROW,
+            column=PLAYBACK_COLUMN,
+            sticky="nsew",
+            padx=(CONTROL_COLUMN_PADDING, 0),
+        )
+        self._add_selector(playback_group, "Play Mode", self.play_mode, PLAY_MODES, FIRST_CONTROL_COLUMN)
+        self._add_play_button(playback_group)
+
+        info_group = ttk.LabelFrame(header, text="Info", padding=GROUP_INNER_PADDING)
+        info_group.grid(row=CONTROLS_ROW, column=INFO_COLUMN, sticky="nsew", padx=(CONTROL_COLUMN_PADDING, 0))
+        ttk.Label(info_group, textvariable=self.playability).pack(anchor="w")
+        ttk.Label(info_group, textvariable=self.status, wraplength=320).pack(anchor="w", pady=(SELECTOR_TOP_PADDING, 0))
+        ttk.Label(info_group, textvariable=self.audio_status).pack(anchor="w", pady=(SELECTOR_TOP_PADDING, 0))
 
         for column in range(CONTROL_COLUMN_COUNT):
             header.columnconfigure(column, weight=1)
@@ -171,10 +218,10 @@ class GuitarChordViewer(tk.Tk):
 
     def _add_play_button(self, parent):
         frame = ttk.Frame(parent)
-        frame.grid(row=CONTROLS_ROW, column=PLAY_BUTTON_COLUMN, sticky="ew", padx=(CONTROL_COLUMN_PADDING, 0))
+        frame.grid(row=CONTROLS_ROW, column=1, sticky="ew", padx=(CONTROL_COLUMN_PADDING, 0))
 
         ttk.Label(frame, text="Audio").pack(anchor="w")
-        button = ttk.Button(frame, text="Play", command=self._play_selected_chord)
+        button = ttk.Button(frame, text="▶ Play", command=self._play_selected_chord)
         button.pack(fill=tk.X, pady=(SELECTOR_TOP_PADDING, 0))
 
     def _build_canvas(self):
@@ -184,14 +231,33 @@ class GuitarChordViewer(tk.Tk):
         self.canvas = tk.Canvas(body, background=CANVAS_BACKGROUND, highlightthickness=0)
         self.canvas.pack(fill=tk.BOTH, expand=True)
 
-        status_label = ttk.Label(body, textvariable=self.status)
-        status_label.pack(anchor="w", pady=(STATUS_TOP_PADDING, 0))
-        playability_label = ttk.Label(body, textvariable=self.playability)
-        playability_label.pack(anchor="w")
-        audio_status_label = ttk.Label(body, textvariable=self.audio_status)
-        audio_status_label.pack(anchor="w")
-
         self.canvas.bind("<Configure>", lambda _event: self.draw_fretboard())
+
+    def _build_footer(self):
+        footer = ttk.Frame(self, padding=FOOTER_PADDING)
+        footer.pack(fill=tk.X)
+        ttk.Label(footer, textvariable=self.footer).pack(side=tk.LEFT)
+        self._add_instagram_icon(footer)
+        ttk.Label(footer, text=f"@{AUTHOR_INSTAGRAM}").pack(side=tk.LEFT, padx=(4, 0))
+
+    def _add_instagram_icon(self, parent):
+        icon = tk.Canvas(
+            parent,
+            width=INSTAGRAM_ICON_SIZE,
+            height=INSTAGRAM_ICON_SIZE,
+            highlightthickness=0,
+        )
+        icon.pack(side=tk.LEFT, padx=(8, 0))
+        icon.create_rectangle(
+            2,
+            2,
+            INSTAGRAM_ICON_SIZE - 2,
+            INSTAGRAM_ICON_SIZE - 2,
+            outline=INSTAGRAM_ICON_STROKE,
+            width=2,
+        )
+        icon.create_oval(6, 6, INSTAGRAM_ICON_SIZE - 6, INSTAGRAM_ICON_SIZE - 6, outline=INSTAGRAM_ICON_STROKE, width=2)
+        icon.create_oval(13, 4, 15, 6, fill=INSTAGRAM_ICON_STROKE, outline=INSTAGRAM_ICON_STROKE)
 
     def _bind_updates(self):
         for variable in (self.root_note, self.chord_family, self.chord_type, self.inversion):
