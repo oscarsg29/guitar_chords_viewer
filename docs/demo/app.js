@@ -2079,7 +2079,6 @@ const SELECTORS = {
   inversion: document.querySelector("#inversion"),
   fretboard: document.querySelector("#fretboard"),
   chordName: document.querySelector("#chordName"),
-  playability: document.querySelector("#playability"),
   playMode: document.querySelector("#playMode"),
   playButton: document.querySelector("#playButton"),
 };
@@ -2633,12 +2632,9 @@ function updateView() {
     SELECTORS.chordFamily.value,
     SELECTORS.rootNote.value
   );
-  const playability = assessPlayability(voicing);
   const chordName = compactChordName(voicing);
 
   SELECTORS.chordName.textContent = chordName;
-  SELECTORS.playability.textContent = playability.message;
-  SELECTORS.playability.dataset.rating = playability.rating;
   drawFretboard(voicing);
 }
 

@@ -44,7 +44,6 @@ from guitar_chords_viewer.fretboard import (
 from guitar_chords_viewer.music_theory import (
     CHROMATIC_SCALE,
     STRING_NAMES,
-    assess_chord_playability,
     calculate_voicing,
     get_chord_families,
     get_chord_types,
@@ -254,7 +253,6 @@ class GuitarChordViewer(tk.Tk):
         self.inversion = tk.StringVar(value=get_inversions(chord_type)[FIRST_OPTION_INDEX])
         self.play_mode = tk.StringVar(value=PLAY_MODE_CHORD)
         self.chord_name = tk.StringVar()
-        self.playability = tk.StringVar()
         self.footer = tk.StringVar(
             value=(
                 f"Version: {current_version_label()} | Author: {AUTHOR_NAME}"
@@ -327,7 +325,6 @@ class GuitarChordViewer(tk.Tk):
         info_group = ttk.LabelFrame(header, text="Info", padding=GROUP_INNER_PADDING)
         info_group.grid(row=CONTROLS_ROW, column=INFO_COLUMN, sticky="nsew", padx=(CONTROL_COLUMN_PADDING, 0))
         ttk.Label(info_group, textvariable=self.chord_name, font=("Helvetica", 15, "bold")).pack(anchor="w")
-        ttk.Label(info_group, textvariable=self.playability, wraplength=INFO_WRAP_LENGTH).pack(anchor="w")
 
         header.columnconfigure(FIRST_CONTROL_COLUMN, weight=5)
         header.columnconfigure(PLAYBACK_COLUMN, weight=2)
@@ -502,10 +499,3 @@ class GuitarChordViewer(tk.Tk):
 
     def _update_status(self, voicing):
         self.chord_name.set(compact_chord_name(voicing))
-        assessment = assess_chord_playability(
-            self.chord_type.get(),
-            self.inversion.get(),
-            self.chord_family.get(),
-            self.root_note.get(),
-        )
-        self.playability.set(assessment.message)
