@@ -28,6 +28,7 @@ class PlayabilityAssessment:
 
 def assess_playability(frets, voicing_note, max_note_count=MAX_NOTES_IN_DROP_MODEL):
     """Classify a generated voicing as playable, stretchy, or not recommended."""
+    del voicing_note
     fretted_positions = [fret for fret in frets.values() if fret > OPEN_FRET]
     fret_span = _fret_span(fretted_positions)
     fretted_note_count = len(fretted_positions)
@@ -45,7 +46,7 @@ def assess_playability(frets, voicing_note, max_note_count=MAX_NOTES_IN_DROP_MOD
             rating=NOT_RECOMMENDED,
             fret_span=fret_span,
             fretted_note_count=fretted_note_count,
-            message=f"Not recommended: highest fret is above {MAX_RECOMMENDED_FRET}. {voicing_note}",
+            message=f"Not recommended: highest fret is above {MAX_RECOMMENDED_FRET}.",
         )
 
     if _mixes_open_strings_with_high_position(frets, fretted_positions):
@@ -53,10 +54,7 @@ def assess_playability(frets, voicing_note, max_note_count=MAX_NOTES_IN_DROP_MOD
             rating=NOT_RECOMMENDED,
             fret_span=fret_span,
             fretted_note_count=fretted_note_count,
-            message=(
-                "Not recommended: open strings mixed with a high-position fretted note. "
-                f"{voicing_note}"
-            ),
+            message="Not recommended: open strings mixed with a high-position fretted note.",
         )
 
     if fret_span <= EASY_MAX_FRET_SPAN:
@@ -64,7 +62,7 @@ def assess_playability(frets, voicing_note, max_note_count=MAX_NOTES_IN_DROP_MOD
             rating=EASY,
             fret_span=fret_span,
             fretted_note_count=fretted_note_count,
-            message=f"Playable: fret span {fret_span}. {voicing_note}",
+            message=f"Playable: fret span {fret_span}.",
         )
 
     if fret_span <= STRETCHY_MAX_FRET_SPAN:
@@ -72,14 +70,14 @@ def assess_playability(frets, voicing_note, max_note_count=MAX_NOTES_IN_DROP_MOD
             rating=STRETCHY,
             fret_span=fret_span,
             fretted_note_count=fretted_note_count,
-            message=f"Stretchy: fret span {fret_span}. {voicing_note}",
+            message=f"Stretchy: fret span {fret_span}.",
         )
 
     return PlayabilityAssessment(
         rating=NOT_RECOMMENDED,
         fret_span=fret_span,
         fretted_note_count=fretted_note_count,
-        message=f"Not recommended: fret span {fret_span}. {voicing_note}",
+        message=f"Not recommended: fret span {fret_span}.",
     )
 
 

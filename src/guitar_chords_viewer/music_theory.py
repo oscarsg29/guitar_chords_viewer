@@ -1,5 +1,6 @@
 """Music data and fret-position calculation for guitar chord voicings."""
 
+import re
 from dataclasses import dataclass
 
 from guitar_chords_viewer.playability import MAX_NOTES_IN_CAGED_MODEL, assess_playability
@@ -27,6 +28,7 @@ CAGED_SUS4 = "Suspended 4 (R-4-5)"
 CAGED_ADD9 = "Add 9 (R-3-5-9)"
 CAGED_DIMINISHED = "Diminished triad (R-b3-b5)"
 CAGED_AUGMENTED = "Augmented triad (R-3-#5)"
+FORMULA_PATTERN = re.compile(r"\(([^()]*)\)")
 
 
 @dataclass(frozen=True)
@@ -171,7 +173,7 @@ CHORD_QUALITIES = {
         display_labels={"R": "R", "3": "4", "5": "b7", "7": "9"},
         voicing_note="Shell voicing: suspended dominant sound with the fifth omitted.",
     ),
-    "13 shell (R-3-b7-13)": ChordQuality(
+    "Dominant 13 shell (R-3-b7-13)": ChordQuality(
         intervals={"R": 0, "3": 4, "5": 10, "7": 21},
         display_labels={"R": "R", "3": "3", "5": "b7", "7": "13"},
         voicing_note="Shell voicing: omits the fifth and ninth/eleventh color tones.",
@@ -509,6 +511,13 @@ def _validate_chord_qualities(label, qualities):
                 f"{label} {name!r} has interval keys {sorted(interval_keys)} "
                 f"but display-label keys {sorted(display_keys)}."
             )
+        formula_labels = _formula_labels(name)
+        display_labels = list(quality.display_labels.values())
+        if formula_labels != display_labels:
+            errors.append(
+                f"{label} {name!r} formula labels {formula_labels} "
+                f"do not match display labels {display_labels}."
+            )
         if "R" not in interval_keys:
             errors.append(f"{label} {name!r} does not define a root interval.")
     return errors
@@ -579,6 +588,13 @@ def _validate_layout(context, layout, qualities):
                     f"missing from {quality_name!r} display labels."
                 )
     return errors
+
+
+def _formula_labels(chord_family):
+    match = FORMULA_PATTERN.search(chord_family)
+    if match is None:
+        return []
+    return match.group(1).split("-")
 
 
 def _validate_generated_voicings():

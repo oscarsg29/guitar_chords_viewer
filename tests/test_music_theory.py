@@ -108,7 +108,7 @@ class MusicTheoryTests(unittest.TestCase):
             "6/9 shell (R-3-6-9)",
             "Minor 6/9 shell (R-b3-6-9)",
             "9sus4 shell (R-4-b7-9)",
-            "13 shell (R-3-b7-13)",
+            "Dominant 13 shell (R-3-b7-13)",
             "Minor 11 shell (R-b3-b7-11)",
         }
 
@@ -133,7 +133,7 @@ class MusicTheoryTests(unittest.TestCase):
         _frets, labels = calculate_fret_positions(
             "Drop 2",
             "Root Position",
-            "13 shell (R-3-b7-13)",
+            "Dominant 13 shell (R-3-b7-13)",
             "C",
         )
 

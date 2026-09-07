@@ -337,7 +337,7 @@ const MUSIC_DATA = {
       },
       "voicingNote": "Shell voicing: suspended dominant sound with the fifth omitted."
     },
-    "13 shell (R-3-b7-13)": {
+    "Dominant 13 shell (R-3-b7-13)": {
       "intervals": {
         "R": 0,
         "3": 4,
@@ -2078,14 +2078,10 @@ const SELECTORS = {
   chordType: document.querySelector("#chordType"),
   inversion: document.querySelector("#inversion"),
   fretboard: document.querySelector("#fretboard"),
-  title: document.querySelector("#title"),
-  formula: document.querySelector("#formula"),
-  status: document.querySelector("#status"),
+  chordName: document.querySelector("#chordName"),
   playability: document.querySelector("#playability"),
-  voicingNote: document.querySelector("#voicingNote"),
   playMode: document.querySelector("#playMode"),
   playButton: document.querySelector("#playButton"),
-  audioStatus: document.querySelector("#audioStatus"),
 };
 
 const VIEW = Object.freeze({ width: 1120, height: 480, left: 92, right: 32, top: 54, bottom: 72 });
@@ -2096,6 +2092,75 @@ const MIN_WEB_VISIBLE_FRET_SPAN = 8;
 const OPEN_MARKER_LEFT_OFFSET = 26;
 const PLAY_MODE_CHORD = "Chord";
 const PLAY_MODE_ARPEGGIO = "Arpeggio";
+const CHORD_SYMBOL_SUFFIXES = Object.freeze({
+  "Major triad (R-3-5)": "",
+  "Minor triad (R-b3-5)": "m",
+  "Dominant 7 (R-3-5-b7)": "7",
+  "Major 7 (R-3-5-7)": "maj7",
+  "Minor 7 (R-b3-5-b7)": "m7",
+  "Major 6 (R-3-5-6)": "6",
+  "Minor 6 (R-b3-5-6)": "m6",
+  "Suspended 2 (R-2-5)": "sus2",
+  "Suspended 4 (R-4-5)": "sus4",
+  "Add 9 (R-3-5-9)": "add9",
+  "Diminished triad (R-b3-b5)": "dim",
+  "Augmented triad (R-3-#5)": "aug",
+  "Minor 7 b5 (R-b3-b5-b7)": "m7b5",
+  "Diminished 7 (R-b3-b5-bb7)": "dim7",
+  "Minor Major 7 (R-b3-5-7)": "mMaj7",
+  "Augmented Major 7 (R-3-#5-7)": "augMaj7",
+  "Augmented Dominant 7 (R-3-#5-b7)": "aug7",
+  "Dominant 7 b5 (R-3-b5-b7)": "7b5",
+  "Dominant 7 #5 (R-3-#5-b7)": "7#5",
+  "Dominant 7 sus4 (R-4-5-b7)": "7sus4",
+  "Major 7 #11 shell (R-3-7-#11)": "maj7#11",
+  "Dominant 9 shell (R-3-b7-9)": "9",
+  "Minor 9 shell (R-b3-b7-9)": "m9",
+  "Major 9 shell (R-3-7-9)": "maj9",
+  "6/9 shell (R-3-6-9)": "6/9",
+  "Minor 6/9 shell (R-b3-6-9)": "m6/9",
+  "9sus4 shell (R-4-b7-9)": "9sus4",
+  "Dominant 13 shell (R-3-b7-13)": "13",
+  "Minor 11 shell (R-b3-b7-11)": "m11",
+});
+const NATURAL_NOTE_PITCHES = Object.freeze({ C: 0, D: 2, E: 4, F: 5, G: 7, A: 9, B: 11 });
+const NATURAL_NOTES = Object.freeze(Object.keys(NATURAL_NOTE_PITCHES));
+const INTERVAL_SEMITONES = Object.freeze({
+  R: 0,
+  "2": 2,
+  b3: 3,
+  "3": 4,
+  "4": 5,
+  b5: 6,
+  "#5": 8,
+  "5": 7,
+  "6": 9,
+  bb7: 9,
+  b7: 10,
+  "7": 11,
+  "9": 14,
+  "11": 17,
+  "#11": 18,
+  "13": 21,
+});
+const INTERVAL_LETTER_STEPS = Object.freeze({
+  R: 0,
+  "2": 1,
+  "9": 1,
+  b3: 2,
+  "3": 2,
+  "4": 3,
+  "11": 3,
+  "#11": 3,
+  b5: 4,
+  "5": 4,
+  "#5": 4,
+  "6": 5,
+  "13": 5,
+  bb7: 6,
+  b7: 6,
+  "7": 6,
+});
 const STRING_OPEN_MIDI = Object.freeze({ 1: 64, 2: 59, 3: 55, 4: 50, 5: 45, 6: 40 });
 const A4_MIDI_NOTE = 69;
 const A4_FREQUENCY = 440.0;
@@ -2146,6 +2211,52 @@ function chordQuality(chordType, chordFamily) {
     return MUSIC_DATA.chordQualities[chordFamily];
   }
   return MUSIC_DATA.cagedChordQualities[chordFamily];
+}
+
+function compactChordName(voicing) {
+  const chordName = `${voicing.rootNote}${CHORD_SYMBOL_SUFFIXES[voicing.chordFamily]}`;
+  const bassNote = bassNoteName(voicing);
+  return bassNote === voicing.rootNote ? chordName : `${chordName}/${bassNote}`;
+}
+
+function bassNoteName(voicing) {
+  const bassPosition = voicing.positions.reduce((lowestString, position) => (
+    position.string > lowestString.string ? position : lowestString
+  ));
+  return spellChordTone(voicing.rootNote, bassPosition.label);
+}
+
+function spellChordTone(rootNote, intervalLabel) {
+  if (intervalLabel === "R") {
+    return rootNote;
+  }
+
+  const rootPitch = MUSIC_DATA.chromaticScale.indexOf(rootNote);
+  const targetPitch = positiveModulo(rootPitch + INTERVAL_SEMITONES[intervalLabel], MUSIC_DATA.semitonesPerOctave);
+  const targetLetter = intervalLetter(rootNote, intervalLabel);
+  const targetNaturalPitch = NATURAL_NOTE_PITCHES[targetLetter];
+  let accidentalOffset = targetPitch - targetNaturalPitch;
+  if (accidentalOffset > MUSIC_DATA.semitonesPerOctave / 2) {
+    accidentalOffset -= MUSIC_DATA.semitonesPerOctave;
+  } else if (accidentalOffset < -(MUSIC_DATA.semitonesPerOctave / 2)) {
+    accidentalOffset += MUSIC_DATA.semitonesPerOctave;
+  }
+
+  if (Math.abs(accidentalOffset) > 1) {
+    return MUSIC_DATA.chromaticScale[targetPitch];
+  }
+
+  const accidental = accidentalOffset < 0 ? "b".repeat(Math.abs(accidentalOffset)) : "#".repeat(accidentalOffset);
+  return `${targetLetter}${accidental}`;
+}
+
+function intervalLetter(rootNote, intervalLabel) {
+  const rootLetterIndex = NATURAL_NOTES.indexOf(rootNote[0]);
+  const targetLetterIndex = positiveModulo(
+    rootLetterIndex + INTERVAL_LETTER_STEPS[intervalLabel],
+    NATURAL_NOTES.length
+  );
+  return NATURAL_NOTES[targetLetterIndex];
 }
 
 function populateSelect(select, values, selectedValue) {
@@ -2251,7 +2362,7 @@ function assessPlayability(voicing) {
     return {
       rating: "not recommended",
       fretSpan,
-      message: `Not recommended: highest fret is above ${MUSIC_DATA.maxRecommendedFret}. ${voicing.voicingNote}`,
+      message: `Not recommended: highest fret is above ${MUSIC_DATA.maxRecommendedFret}.`,
     };
   }
 
@@ -2263,19 +2374,19 @@ function assessPlayability(voicing) {
     return {
       rating: "not recommended",
       fretSpan,
-      message: `Not recommended: open strings mixed with a high-position fretted note. ${voicing.voicingNote}`,
+      message: "Not recommended: open strings mixed with a high-position fretted note.",
     };
   }
 
   if (fretSpan <= MUSIC_DATA.easyMaxFretSpan) {
-    return { rating: "playable", fretSpan, message: `Playable: fret span ${fretSpan}. ${voicing.voicingNote}` };
+    return { rating: "playable", fretSpan, message: `Playable: fret span ${fretSpan}.` };
   }
 
   if (fretSpan <= MUSIC_DATA.stretchyMaxFretSpan) {
-    return { rating: "stretchy", fretSpan, message: `Stretchy: fret span ${fretSpan}. ${voicing.voicingNote}` };
+    return { rating: "stretchy", fretSpan, message: `Stretchy: fret span ${fretSpan}.` };
   }
 
-  return { rating: "not recommended", fretSpan, message: `Not recommended: fret span ${fretSpan}. ${voicing.voicingNote}` };
+  return { rating: "not recommended", fretSpan, message: `Not recommended: fret span ${fretSpan}.` };
 }
 
 function midiNoteForPosition(string, fret) {
@@ -2324,7 +2435,6 @@ function renderDuration(events) {
 async function playVoicing(voicing, playMode) {
   const AudioContextClass = window.AudioContext || window.webkitAudioContext;
   if (!AudioContextClass) {
-    SELECTORS.audioStatus.textContent = "Audio playback is not available in this browser.";
     return;
   }
 
@@ -2345,7 +2455,6 @@ async function playVoicing(voicing, playMode) {
   });
 
   setTimeout(() => masterGain.disconnect(), Math.ceil((duration + 0.15) * 1000));
-  SELECTORS.audioStatus.textContent = `Playing selected chord as ${playMode.toLowerCase()}.`;
 }
 
 function scheduleCleanGuitarNote(destination, frequency, startTime, duration) {
@@ -2476,6 +2585,9 @@ function drawFretboard(voicing) {
       stroke: fret === 0 ? "#f4f4f4" : "#555555",
       "stroke-width": fret === 0 ? 6 : 2,
     }));
+    if (fret === 0) {
+      continue;
+    }
     const fretLabel = svgEl("text", {
       x: x + 4,
       y: VIEW.height - 24,
@@ -2522,15 +2634,11 @@ function updateView() {
     SELECTORS.rootNote.value
   );
   const playability = assessPlayability(voicing);
-  const quality = chordQuality(voicing.chordType, voicing.chordFamily);
+  const chordName = compactChordName(voicing);
 
-  SELECTORS.title.textContent = `${voicing.rootNote} ${voicing.chordFamily}`;
-  SELECTORS.formula.textContent = Object.values(quality.displayLabels).join("-");
-  SELECTORS.status.textContent = `Showing ${voicing.rootNote} ${voicing.chordFamily} as ${voicing.chordType} (${voicing.inversion}).`;
+  SELECTORS.chordName.textContent = chordName;
   SELECTORS.playability.textContent = playability.message;
   SELECTORS.playability.dataset.rating = playability.rating;
-  SELECTORS.audioStatus.textContent = "";
-  SELECTORS.voicingNote.textContent = voicing.voicingNote;
   drawFretboard(voicing);
 }
 

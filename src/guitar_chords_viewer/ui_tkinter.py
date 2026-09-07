@@ -42,6 +42,7 @@ from guitar_chords_viewer.fretboard import (
     string_y,
 )
 from guitar_chords_viewer.music_theory import (
+    CHROMATIC_SCALE,
     STRING_NAMES,
     assess_chord_playability,
     calculate_voicing,
@@ -52,7 +53,7 @@ from guitar_chords_viewer.music_theory import (
 )
 
 
-APP_TITLE = "Advanced Drop Chord Visualizer"
+APP_TITLE = "Guitar Chords Visualizer"
 AUTHOR_NAME = "Oscar Osorio"
 AUTHOR_INSTAGRAM = "bones29sg"
 DEFAULT_WINDOW_WIDTH = 1280
@@ -79,7 +80,6 @@ CONTROL_COLUMN_COUNT = 3
 TITLE_COLUMNSPAN = CONTROL_COLUMN_COUNT
 TITLE_BOTTOM_PADDING = 10
 SELECTOR_TOP_PADDING = 4
-STATUS_TOP_PADDING = 10
 GROUP_INNER_PADDING = 10
 INFO_WRAP_LENGTH = 260
 
@@ -90,6 +90,85 @@ INVERSION_COLUMN = 3
 PLAYBACK_COLUMN = 1
 INFO_COLUMN = 2
 CHORD_CONTROL_COLUMN_COUNT = 4
+
+CHORD_SYMBOL_SUFFIXES = {
+    "Major triad (R-3-5)": "",
+    "Minor triad (R-b3-5)": "m",
+    "Dominant 7 (R-3-5-b7)": "7",
+    "Major 7 (R-3-5-7)": "maj7",
+    "Minor 7 (R-b3-5-b7)": "m7",
+    "Major 6 (R-3-5-6)": "6",
+    "Minor 6 (R-b3-5-6)": "m6",
+    "Suspended 2 (R-2-5)": "sus2",
+    "Suspended 4 (R-4-5)": "sus4",
+    "Add 9 (R-3-5-9)": "add9",
+    "Diminished triad (R-b3-b5)": "dim",
+    "Augmented triad (R-3-#5)": "aug",
+    "Minor 7 b5 (R-b3-b5-b7)": "m7b5",
+    "Diminished 7 (R-b3-b5-bb7)": "dim7",
+    "Minor Major 7 (R-b3-5-7)": "mMaj7",
+    "Augmented Major 7 (R-3-#5-7)": "augMaj7",
+    "Augmented Dominant 7 (R-3-#5-b7)": "aug7",
+    "Dominant 7 b5 (R-3-b5-b7)": "7b5",
+    "Dominant 7 #5 (R-3-#5-b7)": "7#5",
+    "Dominant 7 sus4 (R-4-5-b7)": "7sus4",
+    "Major 7 #11 shell (R-3-7-#11)": "maj7#11",
+    "Dominant 9 shell (R-3-b7-9)": "9",
+    "Minor 9 shell (R-b3-b7-9)": "m9",
+    "Major 9 shell (R-3-7-9)": "maj9",
+    "6/9 shell (R-3-6-9)": "6/9",
+    "Minor 6/9 shell (R-b3-6-9)": "m6/9",
+    "9sus4 shell (R-4-b7-9)": "9sus4",
+    "Dominant 13 shell (R-3-b7-13)": "13",
+    "Minor 11 shell (R-b3-b7-11)": "m11",
+}
+
+NATURAL_NOTE_PITCHES = {
+    "C": 0,
+    "D": 2,
+    "E": 4,
+    "F": 5,
+    "G": 7,
+    "A": 9,
+    "B": 11,
+}
+NATURAL_NOTES = list(NATURAL_NOTE_PITCHES)
+INTERVAL_SEMITONES = {
+    "R": 0,
+    "2": 2,
+    "b3": 3,
+    "3": 4,
+    "4": 5,
+    "b5": 6,
+    "#5": 8,
+    "5": 7,
+    "6": 9,
+    "bb7": 9,
+    "b7": 10,
+    "7": 11,
+    "9": 14,
+    "11": 17,
+    "#11": 18,
+    "13": 21,
+}
+INTERVAL_LETTER_STEPS = {
+    "R": 0,
+    "2": 1,
+    "9": 1,
+    "b3": 2,
+    "3": 2,
+    "4": 3,
+    "11": 3,
+    "#11": 3,
+    "b5": 4,
+    "5": 4,
+    "#5": 4,
+    "6": 5,
+    "13": 5,
+    "bb7": 6,
+    "b7": 6,
+    "7": 6,
+}
 
 
 def centered_geometry(window_width, window_height, screen_width, screen_height):
@@ -114,6 +193,52 @@ def current_version_label():
     return f"commit {commit}" if commit else "local build"
 
 
+def compact_chord_name(voicing):
+    """Return a lead-sheet style chord symbol for the selected voicing."""
+    suffix = CHORD_SYMBOL_SUFFIXES[voicing.chord_family]
+    chord_name = f"{voicing.root_note}{suffix}"
+    bass_note = _bass_note_name(voicing)
+    if bass_note != voicing.root_note:
+        return f"{chord_name}/{bass_note}"
+    return chord_name
+
+
+def _bass_note_name(voicing):
+    bass_position = max(voicing.positions, key=lambda position: position.string)
+    return _spell_chord_tone(voicing.root_note, bass_position.label)
+
+
+def _spell_chord_tone(root_note, interval_label):
+    if interval_label == "R":
+        return root_note
+
+    root_pitch = CHROMATIC_SCALE.index(root_note)
+    target_pitch = (root_pitch + INTERVAL_SEMITONES[interval_label]) % len(CHROMATIC_SCALE)
+    target_letter = _interval_letter(root_note, interval_label)
+    target_natural_pitch = NATURAL_NOTE_PITCHES[target_letter]
+    accidental_offset = target_pitch - target_natural_pitch
+    if accidental_offset > len(CHROMATIC_SCALE) // 2:
+        accidental_offset -= len(CHROMATIC_SCALE)
+    elif accidental_offset < -(len(CHROMATIC_SCALE) // 2):
+        accidental_offset += len(CHROMATIC_SCALE)
+
+    if abs(accidental_offset) > 1:
+        return CHROMATIC_SCALE[target_pitch]
+
+    if accidental_offset < 0:
+        accidental = "b" * abs(accidental_offset)
+    else:
+        accidental = "#" * accidental_offset
+    return f"{target_letter}{accidental}"
+
+
+def _interval_letter(root_note, interval_label):
+    root_letter = root_note[0]
+    root_letter_index = NATURAL_NOTES.index(root_letter)
+    target_letter_index = (root_letter_index + INTERVAL_LETTER_STEPS[interval_label]) % len(NATURAL_NOTES)
+    return NATURAL_NOTES[target_letter_index]
+
+
 class GuitarChordViewer(tk.Tk):
     """Desktop app for selecting and drawing guitar drop chord voicings."""
 
@@ -128,9 +253,8 @@ class GuitarChordViewer(tk.Tk):
         self.chord_type = tk.StringVar(value=chord_type)
         self.inversion = tk.StringVar(value=get_inversions(chord_type)[FIRST_OPTION_INDEX])
         self.play_mode = tk.StringVar(value=PLAY_MODE_CHORD)
-        self.status = tk.StringVar()
+        self.chord_name = tk.StringVar()
         self.playability = tk.StringVar()
-        self.audio_status = tk.StringVar()
         self.footer = tk.StringVar(
             value=(
                 f"Version: {current_version_label()} | Author: {AUTHOR_NAME}"
@@ -202,15 +326,8 @@ class GuitarChordViewer(tk.Tk):
 
         info_group = ttk.LabelFrame(header, text="Info", padding=GROUP_INNER_PADDING)
         info_group.grid(row=CONTROLS_ROW, column=INFO_COLUMN, sticky="nsew", padx=(CONTROL_COLUMN_PADDING, 0))
+        ttk.Label(info_group, textvariable=self.chord_name, font=("Helvetica", 15, "bold")).pack(anchor="w")
         ttk.Label(info_group, textvariable=self.playability, wraplength=INFO_WRAP_LENGTH).pack(anchor="w")
-        ttk.Label(info_group, textvariable=self.status, wraplength=INFO_WRAP_LENGTH).pack(
-            anchor="w",
-            pady=(SELECTOR_TOP_PADDING, 0),
-        )
-        ttk.Label(info_group, textvariable=self.audio_status, wraplength=INFO_WRAP_LENGTH).pack(
-            anchor="w",
-            pady=(SELECTOR_TOP_PADDING, 0),
-        )
 
         header.columnconfigure(FIRST_CONTROL_COLUMN, weight=5)
         header.columnconfigure(PLAYBACK_COLUMN, weight=2)
@@ -240,13 +357,6 @@ class GuitarChordViewer(tk.Tk):
 
         self.canvas = tk.Canvas(body, background=CANVAS_BACKGROUND, highlightthickness=0)
         self.canvas.pack(fill=tk.BOTH, expand=True)
-
-        status_label = ttk.Label(body, textvariable=self.status)
-        status_label.pack(anchor="w", pady=(STATUS_TOP_PADDING, 0))
-        playability_label = ttk.Label(body, textvariable=self.playability)
-        playability_label.pack(anchor="w")
-        audio_status_label = ttk.Label(body, textvariable=self.audio_status)
-        audio_status_label.pack(anchor="w")
 
         self.canvas.bind("<Configure>", lambda _event: self.draw_fretboard())
 
@@ -281,7 +391,6 @@ class GuitarChordViewer(tk.Tk):
             variable.trace_add("write", lambda *_args: self._selection_changed())
 
     def _selection_changed(self):
-        self.audio_status.set("")
         self._refresh_chord_families()
         self._refresh_inversions()
         self.draw_fretboard()
@@ -303,10 +412,7 @@ class GuitarChordViewer(tk.Tk):
             self.chord_family.get(),
             self.root_note.get(),
         )
-        if play_frets(voicing.frets, play_mode=self.play_mode.get()):
-            self.audio_status.set(f"Playing selected chord as {self.play_mode.get().lower()}.")
-        else:
-            self.audio_status.set("Audio playback is not available on this system.")
+        play_frets(voicing.frets, play_mode=self.play_mode.get())
 
     def _refresh_inversions(self):
         valid_inversions = get_inversions(self.chord_type.get())
@@ -329,7 +435,7 @@ class GuitarChordViewer(tk.Tk):
             self.root_note.get(),
         )
         self._draw_fretboard(voicing)
-        self._update_status()
+        self._update_status(voicing)
 
     def _draw_fretboard(self, voicing):
         width = max(self.canvas.winfo_width(), MIN_CANVAS_WIDTH)
@@ -350,6 +456,8 @@ class GuitarChordViewer(tk.Tk):
             color = NUT_COLOR if fret == NUT_FRET else FRET_COLOR
             line_width = NUT_LINE_WIDTH if fret == NUT_FRET else FRET_LINE_WIDTH
             self.canvas.create_line(x, MARGIN_TOP, x, height - MARGIN_BOTTOM, fill=color, width=line_width)
+            if fret == NUT_FRET:
+                continue
             self.canvas.create_text(
                 x + FRET_LABEL_X_OFFSET,
                 height - FRET_LABEL_BOTTOM_OFFSET,
@@ -392,11 +500,8 @@ class GuitarChordViewer(tk.Tk):
                 font=MARKER_FONT,
             )
 
-    def _update_status(self):
-        self.status.set(
-            f"Showing {self.root_note.get()} {self.chord_family.get()} "
-            f"as {self.chord_type.get()} ({self.inversion.get()})."
-        )
+    def _update_status(self, voicing):
+        self.chord_name.set(compact_chord_name(voicing))
         assessment = assess_chord_playability(
             self.chord_type.get(),
             self.inversion.get(),
