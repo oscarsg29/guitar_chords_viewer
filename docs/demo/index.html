@@ -223,6 +223,7 @@
       gap: 8px;
       margin-top: 12px;
       padding: 0 2px;
+      flex-wrap: wrap;
     }
 
     .app-footer a {
@@ -239,6 +240,19 @@
     .instagram-icon {
       width: 18px;
       height: 18px;
+      flex: 0 0 auto;
+      color: #202124;
+    }
+
+    .support-link {
+      display: inline-flex;
+      align-items: center;
+      gap: 5px;
+    }
+
+    .coffee-icon {
+      width: 16px;
+      height: 16px;
       flex: 0 0 auto;
       color: #202124;
     }
@@ -345,6 +359,15 @@
         <circle cx="17.5" cy="6.5" r="1.3" fill="currentColor"></circle>
       </svg>
       <a href="https://www.instagram.com/bones29sg/" rel="me noopener" target="_blank">@bones29sg</a>
+      <a class="support-link" href="https://paypal.me/oscarsg29" rel="noopener" target="_blank">
+        <svg class="coffee-icon" viewBox="0 0 24 24" aria-hidden="true">
+          <path d="M4 8h12v6a5 5 0 0 1-5 5H9a5 5 0 0 1-5-5V8Z" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round"></path>
+          <path d="M16 10h2a3 3 0 0 1 0 6h-2" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"></path>
+          <path d="M6 4h8" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"></path>
+          <path d="M4 21h14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"></path>
+        </svg>
+        support the creator
+      </a>
     </footer>
   </main>
 
