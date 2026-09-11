@@ -45,7 +45,7 @@ class TkinterUiTests(unittest.TestCase):
     def test_compact_chord_name_uses_common_minor_seventh_symbol(self):
         voicing = calculate_voicing(
             "CAGED E Shape",
-            "Standard Shape",
+            "Full Shape",
             "Minor 7 (R-b3-5-b7)",
             "C",
         )
@@ -150,7 +150,7 @@ class TkinterUiTests(unittest.TestCase):
             for chord_type in get_chord_types():
                 for chord_family in get_chord_families(chord_type):
                     for inversion in get_inversions(chord_type):
-                        if inversion not in {"Root Position", "Standard Shape"}:
+                        if inversion not in {"Root Position", "Full Shape"}:
                             continue
                         with self.subTest(
                             root_note=root_note,

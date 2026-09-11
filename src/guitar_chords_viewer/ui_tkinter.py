@@ -301,10 +301,10 @@ class GuitarChordViewer(tk.Tk):
             get_chord_families(self.chord_type.get()),
             CHORD_QUALITY_COLUMN,
         )
-        self._add_selector(chord_group, "Drop Type", self.chord_type, get_chord_types(), DROP_TYPE_COLUMN)
+        self._add_selector(chord_group, "Voicing Shape", self.chord_type, get_chord_types(), DROP_TYPE_COLUMN)
         self.inversion_menu = self._add_selector(
             chord_group,
-            "Inversion",
+            "Inversion / Variant",
             self.inversion,
             get_inversions(self.chord_type.get()),
             INVERSION_COLUMN,

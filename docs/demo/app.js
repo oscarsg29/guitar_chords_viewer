@@ -35,7 +35,11 @@ const MUSIC_DATA = {
     "5": "A",
     "6": "E"
   },
-  "cagedInversion": "Standard Shape",
+  "cagedInversion": "Full Shape",
+  "cagedLegacyInversion": "Standard Shape",
+  "cagedTopFour": "Top 4 Strings",
+  "cagedMiddleFour": "Middle 4 Strings",
+  "cagedLowerFour": "Lower 4 Strings",
   "chordQualities": {
     "Major 7 (R-3-5-7)": {
       "intervals": {
@@ -2197,9 +2201,26 @@ function getChordFamilies(chordType) {
 
 function getInversions(chordType) {
   if (isCagedShape(chordType)) {
-    return [MUSIC_DATA.cagedInversion];
+    return cagedVariants(chordType);
   }
   return Object.keys(MUSIC_DATA.baseShapes[chordType]);
+}
+
+function cagedVariants(chordType) {
+  const strings = standardCagedStrings(chordType);
+  const variants = [MUSIC_DATA.cagedInversion];
+  if (strings.length >= 5) {
+    variants.push(MUSIC_DATA.cagedTopFour, MUSIC_DATA.cagedLowerFour);
+  }
+  if (strings.length >= 6) {
+    variants.splice(2, 0, MUSIC_DATA.cagedMiddleFour);
+  }
+  return variants;
+}
+
+function standardCagedStrings(chordType) {
+  const layout = MUSIC_DATA.cagedShapes[chordType].layouts["Major triad (R-3-5)"];
+  return Object.keys(layout).map(Number).sort((a, b) => a - b);
 }
 
 function chordQuality(chordType, chordFamily) {
@@ -2311,7 +2332,7 @@ function calculateCagedVoicing(chordType, inversion, chordFamily, rootNote) {
   const shapeRootIndex = MUSIC_DATA.chromaticScale.indexOf(shape.root_note);
   const shapeOffset = positiveModulo(rootIndex - shapeRootIndex, MUSIC_DATA.semitonesPerOctave);
   const quality = chordQuality(chordType, chordFamily);
-  const layout = shape.layouts[chordFamily];
+  const layout = cagedVariantLayout(chordType, inversion, shape.layouts[chordFamily]);
   const positions = Object.entries(layout).map(([string, note]) => {
     const stringNumber = Number(string);
     const [baseFret, intervalType] = note;
@@ -2331,9 +2352,44 @@ function calculateCagedVoicing(chordType, inversion, chordFamily, rootNote) {
     chordFamily,
     rootNote,
     positions,
-    voicingNote: quality.voicingNote,
+    voicingNote: cagedVoicingNote(inversion, quality.voicingNote),
     maxNoteCount: MUSIC_DATA.maxNotesInCagedModel,
   };
+}
+
+function cagedVariantLayout(chordType, inversion, layout) {
+  const selectedInversion = inversion === MUSIC_DATA.cagedLegacyInversion ? MUSIC_DATA.cagedInversion : inversion;
+  if (selectedInversion === MUSIC_DATA.cagedInversion) {
+    return layout;
+  }
+
+  const selectedStrings = cagedVariantStrings(chordType, selectedInversion);
+  const availableStrings = selectedStrings.filter((string) => Object.prototype.hasOwnProperty.call(layout, string));
+  if (availableStrings.length < 3) {
+    return layout;
+  }
+  return Object.fromEntries(availableStrings.map((string) => [String(string), layout[string]]));
+}
+
+function cagedVariantStrings(chordType, inversion) {
+  const strings = standardCagedStrings(chordType);
+  if (inversion === MUSIC_DATA.cagedTopFour) {
+    return strings.slice(0, 4);
+  }
+  if (inversion === MUSIC_DATA.cagedMiddleFour && strings.length >= 6) {
+    return strings.slice(1, 5);
+  }
+  if (inversion === MUSIC_DATA.cagedLowerFour) {
+    return strings.slice(-4);
+  }
+  throw new Error(`Unsupported CAGED variant ${inversion} for ${chordType}.`);
+}
+
+function cagedVoicingNote(inversion, voicingNote) {
+  if (inversion === MUSIC_DATA.cagedInversion || inversion === MUSIC_DATA.cagedLegacyInversion) {
+    return voicingNote;
+  }
+  return `${voicingNote} Uses the ${inversion.toLowerCase()} subset of the CAGED shape.`;
 }
 
 function nearestFretForPitch(string, targetPitch, preferredFret) {

@@ -15,7 +15,6 @@ CAGED_FRET_SEARCH_OCTAVES = 3
 CHROMATIC_SCALE = ["C", "C#", "D", "D#", "E", "F", "F#", "G", "G#", "A", "A#", "B"]
 STRING_TUNING_OFFSETS = {1: 4, 2: 11, 3: 7, 4: 2, 5: 9, 6: 4}
 STRING_NAMES = {1: "E", 2: "B", 3: "G", 4: "D", 5: "A", 6: "E"}
-CAGED_INVERSION = "Standard Shape"
 CAGED_MAJOR = "Major triad (R-3-5)"
 CAGED_MINOR = "Minor triad (R-b3-5)"
 CAGED_DOMINANT_7 = "Dominant 7 (R-3-5-b7)"
@@ -28,6 +27,11 @@ CAGED_SUS4 = "Suspended 4 (R-4-5)"
 CAGED_ADD9 = "Add 9 (R-3-5-9)"
 CAGED_DIMINISHED = "Diminished triad (R-b3-b5)"
 CAGED_AUGMENTED = "Augmented triad (R-3-#5)"
+CAGED_INVERSION = "Full Shape"
+CAGED_LEGACY_INVERSION = "Standard Shape"
+CAGED_TOP_FOUR = "Top 4 Strings"
+CAGED_MIDDLE_FOUR = "Middle 4 Strings"
+CAGED_LOWER_FOUR = "Lower 4 Strings"
 FORMULA_PATTERN = re.compile(r"\(([^()]*)\)")
 
 
@@ -383,7 +387,7 @@ def get_chord_types():
 def get_inversions(chord_type):
     """Return inversion names for a drop voicing type."""
     if chord_type in CAGED_SHAPES:
-        return [CAGED_INVERSION]
+        return _caged_variants(chord_type)
     return list(BASE_SHAPES[chord_type])
 
 
@@ -456,7 +460,7 @@ def _calculate_caged_voicing(chord_type, inversion, chord_family, root_note):
     shape_root_index = CHROMATIC_SCALE.index(shape["root_note"])
     shape_offset = (root_index - shape_root_index) % SEMITONES_PER_OCTAVE
     chord_quality = _chord_quality(chord_family, chord_type)
-    layout = shape["layouts"][chord_family]
+    layout = _caged_variant_layout(chord_type, inversion, shape["layouts"][chord_family])
 
     positions = []
 
@@ -479,9 +483,55 @@ def _calculate_caged_voicing(chord_type, inversion, chord_family, root_note):
         chord_family=chord_family,
         root_note=root_note,
         positions=tuple(positions),
-        voicing_note=chord_quality.voicing_note,
+        voicing_note=_caged_voicing_note(inversion, chord_quality.voicing_note),
         max_note_count=MAX_NOTES_IN_CAGED_MODEL,
     )
+
+
+def _caged_variants(chord_type):
+    strings = _standard_caged_strings(chord_type)
+    variants = [CAGED_INVERSION]
+    if len(strings) >= 5:
+        variants.extend([CAGED_TOP_FOUR, CAGED_LOWER_FOUR])
+    if len(strings) >= 6:
+        variants.insert(2, CAGED_MIDDLE_FOUR)
+    return variants
+
+
+def _standard_caged_strings(chord_type):
+    layout = CAGED_SHAPES[chord_type]["layouts"][CAGED_MAJOR]
+    return sorted(layout)
+
+
+def _caged_variant_layout(chord_type, inversion, layout):
+    if inversion == CAGED_LEGACY_INVERSION:
+        inversion = CAGED_INVERSION
+    if inversion == CAGED_INVERSION:
+        return layout
+
+    strings = sorted(layout)
+    selected_strings = _caged_variant_strings(chord_type, inversion)
+    available_strings = [string for string in selected_strings if string in strings]
+    if len(available_strings) < 3:
+        return layout
+    return {string: layout[string] for string in available_strings}
+
+
+def _caged_variant_strings(chord_type, inversion):
+    strings = _standard_caged_strings(chord_type)
+    if inversion == CAGED_TOP_FOUR:
+        return strings[:4]
+    if inversion == CAGED_MIDDLE_FOUR and len(strings) >= 6:
+        return strings[1:5]
+    if inversion == CAGED_LOWER_FOUR:
+        return strings[-4:]
+    raise KeyError(f"Unsupported CAGED variant {inversion!r} for {chord_type!r}.")
+
+
+def _caged_voicing_note(inversion, voicing_note):
+    if inversion == CAGED_INVERSION or inversion == CAGED_LEGACY_INVERSION:
+        return voicing_note
+    return f"{voicing_note} Uses the {inversion.lower()} subset of the CAGED shape."
 
 
 def _nearest_fret_for_pitch(string, target_pitch, preferred_fret):

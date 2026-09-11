@@ -170,7 +170,47 @@ class MusicTheoryTests(unittest.TestCase):
         }
 
         self.assertTrue(expected_shapes.issubset(set(get_chord_types())))
-        self.assertEqual(get_inversions("CAGED C Shape"), ["Standard Shape"])
+        self.assertEqual(get_inversions("CAGED D Shape"), ["Full Shape"])
+        self.assertEqual(
+            get_inversions("CAGED E Shape"),
+            ["Full Shape", "Top 4 Strings", "Middle 4 Strings", "Lower 4 Strings"],
+        )
+
+    def test_image_grips_are_absorbed_into_caged_variants(self):
+        self.assertNotIn("Seventh Inversion Grips", get_chord_types())
+
+        frets, labels = calculate_fret_positions(
+            "CAGED A Shape",
+            "Full Shape",
+            "Dominant 7 (R-3-5-b7)",
+            "C",
+        )
+
+        self.assertEqual(frets, {5: 3, 4: 5, 3: 3, 2: 5, 1: 3})
+        self.assertEqual(labels, {5: "R", 4: "5", 3: "b7", 2: "3", 1: "5"})
+
+    def test_caged_variants_reuse_full_shape_string_groups(self):
+        frets, labels = calculate_fret_positions(
+            "CAGED E Shape",
+            "Top 4 Strings",
+            "Dominant 7 (R-3-5-b7)",
+            "C",
+        )
+
+        self.assertEqual(frets, {4: 8, 3: 9, 2: 8, 1: 8})
+        self.assertEqual(labels, {4: "b7", 3: "3", 2: "5", 1: "R"})
+
+    def test_caged_variants_support_non_dominant_qualities(self):
+        frets, labels = calculate_fret_positions(
+            "CAGED G Shape",
+            "Top 4 Strings",
+            "Minor 7 (R-b3-5-b7)",
+            "C",
+        )
+
+        self.assertEqual(set(frets), {4, 3, 2, 1})
+        self.assertIn("b3", set(labels.values()))
+        self.assertIn("b7", set(labels.values()))
 
     def test_caged_shapes_use_caged_chord_qualities(self):
         self.assertEqual(
@@ -194,7 +234,7 @@ class MusicTheoryTests(unittest.TestCase):
     def test_calculate_c_major_caged_c_shape(self):
         frets, labels = calculate_fret_positions(
             "CAGED C Shape",
-            "Standard Shape",
+            "Full Shape",
             "Major triad (R-3-5)",
             "C",
         )
@@ -205,7 +245,7 @@ class MusicTheoryTests(unittest.TestCase):
     def test_calculate_c_major_caged_a_shape(self):
         frets, labels = calculate_fret_positions(
             "CAGED A Shape",
-            "Standard Shape",
+            "Full Shape",
             "Major triad (R-3-5)",
             "C",
         )
@@ -216,7 +256,7 @@ class MusicTheoryTests(unittest.TestCase):
     def test_caged_minor_shape_lowers_thirds(self):
         frets, labels = calculate_fret_positions(
             "CAGED A Shape",
-            "Standard Shape",
+            "Full Shape",
             "Minor triad (R-b3-5)",
             "C",
         )
@@ -231,20 +271,22 @@ class MusicTheoryTests(unittest.TestCase):
 
             for chord_family in get_chord_families(chord_type):
                 with self.subTest(chord_type=chord_type, chord_family=chord_family):
-                    frets, labels = calculate_fret_positions(
-                        chord_type,
-                        "Standard Shape",
-                        chord_family,
-                        "C",
-                    )
+                    for inversion in get_inversions(chord_type):
+                        with self.subTest(inversion=inversion):
+                            frets, labels = calculate_fret_positions(
+                                chord_type,
+                                inversion,
+                                chord_family,
+                                "C",
+                            )
 
-                    self.assertEqual(set(frets), set(labels))
-                    self.assertGreaterEqual(len(frets), 3)
+                            self.assertEqual(set(frets), set(labels))
+                            self.assertGreaterEqual(len(frets), 3)
 
     def test_caged_dominant_seventh_labels_are_shown(self):
         _frets, labels = calculate_fret_positions(
             "CAGED E Shape",
-            "Standard Shape",
+            "Full Shape",
             "Dominant 7 (R-3-5-b7)",
             "E",
         )
@@ -254,7 +296,7 @@ class MusicTheoryTests(unittest.TestCase):
     def test_caged_suspended_shape_replaces_the_third(self):
         _frets, labels = calculate_fret_positions(
             "CAGED D Shape",
-            "Standard Shape",
+            "Full Shape",
             "Suspended 4 (R-4-5)",
             "D",
         )
